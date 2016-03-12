@@ -14,16 +14,23 @@ def strip_html(text):
         def __init__(self):
             self.reset()
             self.data = []
+            self.total_len = 0
             self.convert_charrefs = True
 
         def handle_data(self, d):
             self.data.append(d)
+            self.total_len += len(d)
+            if self.total_len >= 280:
+                raise StopIteration()
 
         def get_text(self):
             return ''.join(self.data)
 
     s = MarkupStripper()
-    s.feed(text)
+    try:
+        s.feed(text)
+    except StopIteration:
+        pass
     return s.get_text()
 
 def convert_description(description):
