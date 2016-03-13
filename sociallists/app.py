@@ -1,4 +1,5 @@
 import feedparser
+import json
 
 from flask import Flask, render_template
 from sociallists.river import feed_to_river
@@ -10,10 +11,12 @@ def get_river(id):
     feed = feedparser.parse("http://davepeck.org/feed/")
 
     updatedFeeds = {
-        "updatedFeed": [ feed_to_river(feed) ],
+        "updatedFeed": [ feed_to_river(feed, 0) ],
     }
 
-    metadata = {}
+    metadata = {
+        "docs": "http://riverjs.org/",
+    }
 
     river = {
         'updatedFeeds': updatedFeeds,
@@ -21,6 +24,8 @@ def get_river(id):
     }
 
     # TODO: jsonp serialize
+    result = "onGetRiverStream("+json.dumps(river, indent=2)+");"
+    return (result, 200, {'content-type': 'application/javascript'})
 
 @app.route("/")
 def index():
