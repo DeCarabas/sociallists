@@ -64,13 +64,15 @@ def get_entry_pubDate(e):
 
 def entry_to_river(entry, i):
     """Convert a feed entry to a river.js item"""
+    # TODO: See if you can pull a thumbnail.
+    # TODO: See if you can pull enclosures.
     return {
         "title": entry.get('title', ''),
         "link": entry.get('link', ''),
         "body": convert_description(entry.get('description', '')),
         "pubDate": get_entry_pubDate(entry),
         "permaLink": "",  # Not sure why to populate this, so skipping.
-        "id": str(i), # TODO
+        "id": str(i),
     }
 
 def feed_to_river(feed, start_id):
