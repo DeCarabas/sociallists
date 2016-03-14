@@ -3,6 +3,7 @@ import json
 
 from flask import Flask, render_template
 from sociallists.river import feed_to_river
+from sociallists import db
 
 app = Flask('sociallists')
 
@@ -30,3 +31,7 @@ def get_river(id):
 @app.route("/")
 def index():
     return render_template('index.html')
+
+@app.teardown_request
+def shutdown_session(exception=None):
+    db.session.remove()
