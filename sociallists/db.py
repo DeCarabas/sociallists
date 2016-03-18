@@ -91,7 +91,7 @@ def load_river(url):
     )
 
     return river.wrap_feed_updates(
-        [ jsons.loads(u.data) for u in feed.updates ]
+        [ json.loads(u.data) for u in feed.updates ]
     )
 
 def store_river(feed, update_time, river):

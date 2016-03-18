@@ -21,15 +21,17 @@ def get_entry_id(entry):
 
 def update_feed(feed):
     update_time = datetime.utcnow()
-    logger.info('Updating feed {url} @ {now}' % {
-        'url': feed.url,
-        'now': update_time.isoformat(),
-    })
-    f = feedparser.parse(feed.url, feed.etag_header, feed.modified_header)
-    logger.info('Feed {url} has {count} entries' % {
-        'url': feed.url,
-        'count': len(f.entries),
-    })
+    logger.info('Updating feed {url} ({etag}/{modified}) @ {now}'.format(
+        url=feed.url,
+        etag=feed.etag_header,
+        modified=feed.modified_header,
+        now=update_time.isoformat(),
+    ))
+    f = feedparser.parse(feed.url, etag=feed.etag_header, modified=feed.modified_header)
+    logger.info('Feed {url} has {count} entries'.format(
+        url=feed.url,
+        count=len(f.entries),
+    ))
 
     entries_with_ids = [ (get_entry_id(entry), entry) for entry in f.entries ]
     history = db.load_history_set(feed)
@@ -38,19 +40,22 @@ def update_feed(feed):
     ]
 
     f.entries = new_entries
-    logger.info('Feed {url} has {count} NEW entries' % {
-        'url': feed.url,
-        'count': len(f.entries),
-    })
+    logger.info('Feed {url} has {count} NEW entries'.format(
+        url=feed.url,
+        count=len(f.entries),
+    ))
 
     if len(f.entries) > 0:
         r_new = river.feed_to_river_update(f, feed.next_item_id, update_time)
         feed.next_item_id += len(f.entries)
         db.store_river(feed, update_time, r_new)
         db.store_history(feed, [ e_id[0] for e_id in entries_with_ids ])
-        db.session.commit()
 
-    logger.info('Successfully updated feed {url}' % { 'url': feed.url })
+    feed.etag_header = f.get('etag', None)
+    feed.modified_header = f.get('modified', None)
+    db.session.commit()
+
+    logger.info('Successfully updated feed {url}'.format(url=feed.url))
 
 def update_feeds():
     # TODO: Figure out how to partition this thing so we can have
@@ -58,3 +63,8 @@ def update_feeds():
     feeds = db.load_all_feeds()
     for feed in feeds:
         update_feed(feed)
+
+
+if __name__=='__main__':
+    logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+    update_feeds()

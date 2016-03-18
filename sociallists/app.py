@@ -14,7 +14,15 @@ def get_river(id):
     river = feed_to_river(feed, 0)
 
     # TODO: jsonp serialize
-    result = "onGetRiverStream("+json.dumps(river, indent=2)+");"
+    result = "onGetRiverStream("+json.dumps(river, indent=2, sort_keys=True)+");"
+    return (result, 200, {'content-type': 'application/javascript'})
+
+@app.route("/api/v1/feed/<id>")
+def get_feed_river(id):
+    river = db.load_river("http://davepeck.org/feed/")
+
+    # TODO: jsonp serialize
+    result = "onGetRiverStream("+json.dumps(river, indent=2, sort_keys=True)+");"
     return (result, 200, {'content-type': 'application/javascript'})
 
 @app.route("/")
