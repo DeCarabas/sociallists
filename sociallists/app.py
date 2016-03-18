@@ -11,18 +11,7 @@ app = Flask('sociallists')
 def get_river(id):
     feed = feedparser.parse("http://davepeck.org/feed/")
 
-    updatedFeeds = {
-        "updatedFeed": [ feed_to_river(feed, 0) ],
-    }
-
-    metadata = {
-        "docs": "http://riverjs.org/",
-    }
-
-    river = {
-        'updatedFeeds': updatedFeeds,
-        'metadata': metadata,
-    }
+    river = feed_to_river(feed, 0)
 
     # TODO: jsonp serialize
     result = "onGetRiverStream("+json.dumps(river, indent=2)+");"

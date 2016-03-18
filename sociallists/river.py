@@ -75,13 +75,31 @@ def entry_to_river(entry, i):
         "id": str(i),
     }
 
-def feed_to_river(feed, start_id):
+def wrap_feed_updates(feed_updates):
+    """Wrap an array of feed updates in the broader river.js format"""
+    return {
+        'updatedFeeds': {
+            'updatedFeed': feed_updates,
+        },
+        'metadata': {
+            "docs": "http://riverjs.org/",
+        },
+    }
+
+def feed_to_river_update(feed, start_id, update_time = None):
     """Convert a feed object from feedparser to a river.js format"""
+    if update_time is None:
+        update_time = datetime.utcnow()
+
     return {
         "feedTitle": feed.feed.title,
         "feedUrl": feed.href,
         "websiteUrl": feed.feed.link,
         "feedDescription": feed.feed.subtitle,
-        "whenLastUpdate": datetime_to_rfc2822(datetime.utcnow()),
+        "whenLastUpdate": datetime_to_rfc2822(update_time),
         "item": [entry_to_river(e, i) for e,i in zip(feed.entries, count(start_id))],
     }
+
+def feed_to_river(feed, start_id):
+    """Convert a feed object from feedparser to a river.js format"""
+    return wrap_feed_updates([feed_to_river_update(feed, start_id)])
