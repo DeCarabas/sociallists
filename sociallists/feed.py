@@ -58,13 +58,29 @@ def update_feed(feed):
     logger.info('Successfully updated feed {url}'.format(url=feed.url))
 
 def update_feeds():
+    """Update all of the subscribed feeds."""
     # TODO: Figure out how to partition this thing so we can have
     # multiple updaters at once.
     feeds = db.load_all_feeds()
     for feed in feeds:
         update_feed(feed)
 
+def reset_feeds():
+    """Reset cached state of all of the subscribed feeds."""
+    feeds = db.load_all_feeds()
+    for feed in feeds:
+        logger.info('Resetting feed {url} ({etag}/{modified})'.format(
+            url=feed.url,
+            etag=feed.etag_header,
+            modified=feed.modified_header,
+        ))
+        feed.reset()
+    db.session.commit()
 
 if __name__=='__main__':
+    import sys
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
-    update_feeds()
+    if sys.argv[1] == 'update':
+        update_feeds()
+    elif sys.argv[1] == 'reset':
+        reset_feeds()

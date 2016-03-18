@@ -56,11 +56,20 @@ class FeedData(Base):
 
     def __init__(self, **kwargs):
         kwargs.setdefault('last_status', 0)
+        kwargs.setdefault('history', '')
+        kwargs.setdefault('next_item_id', 0)
         super(FeedData, self).__init__(**kwargs)
 
     def __repr__(self):
         return "<FeedData(id=%d, url='%s')>" % (self.id, self.url)
 
+    def reset(self):
+        self.etag_header = None
+        self.modified_header = None
+        self.last_status = 0
+        self.history = ''
+        self.updates = []
+        self.next_item_id = 0
 
 
 def add_feed(url):
