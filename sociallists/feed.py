@@ -57,17 +57,23 @@ def update_feed(feed):
 
     logger.info('Successfully updated feed {url}'.format(url=feed.url))
 
-def update_feeds():
+def update_feeds(args):
     """Update all of the subscribed feeds."""
-    # TODO: Figure out how to partition this thing so we can have
-    # multiple updaters at once.
-    feeds = db.load_all_feeds()
+    if args.all:
+        feeds = db.load_all_feeds()
+    else:
+        feeds = [ db.load_feed_by_url(args.url) ]
+
     for feed in feeds:
         update_feed(feed)
 
-def reset_feeds():
+def reset_feeds(args):
     """Reset cached state of all of the subscribed feeds."""
-    feeds = db.load_all_feeds()
+    if args.all:
+        feeds = db.load_all_feeds()
+    else:
+        feeds = [ db.load_feed_by_url(args.url) ]
+
     for feed in feeds:
         logger.info('Resetting feed {url} ({etag}/{modified})'.format(
             url=feed.url,
@@ -77,10 +83,46 @@ def reset_feeds():
         feed.reset()
     db.session.commit()
 
+def list_feeds(args):
+    feeds = db.load_all_feeds()
+    for feed in feeds:
+        logger.info('{url} ({etag}/{modified})'.format(
+            url=feed.url,
+            etag=feed.etag_header,
+            modified=feed.modified_header,
+        ))
+
+def add_feed(args):
+    db.add_feed(args.url)
+
 if __name__=='__main__':
-    import sys
+    import argparse
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
-    if sys.argv[1] == 'update':
-        update_feeds()
-    elif sys.argv[1] == 'reset':
-        reset_feeds()
+
+    parser = argparse.ArgumentParser(description="sociallists feed related commands")
+    sps = parser.add_subparsers(dest='cmd')
+
+    cp = sps.add_parser('update', help='Update one or all feeds')
+    cp.set_defaults(func=update_feeds)
+    g = cp.add_mutually_exclusive_group(required=True)
+    g.add_argument("-a", "--all", help="Update all feeds", action="store_true")
+    g.add_argument("-u", "--url", help="Update the specified URL")
+
+    cp = sps.add_parser('reset', help='Reset one or all feeds')
+    cp.set_defaults(func=reset_feeds)
+    g = cp.add_mutually_exclusive_group(required=True)
+    g.add_argument("-a", "--all", help="Reset all feeds", action="store_true")
+    g.add_argument("-u", "--url", help="Reset a single URL")
+
+    cp = sps.add_parser('add', help='Add a feed to the DB')
+    cp.set_defaults(func=add_feed)
+    cp.add_argument('url', help="The URL to add to the DB")
+
+    cp = sps.add_parser('list', help='List all feeds in the DB')
+    cp.set_defaults(func=list_feeds)
+
+    args = parser.parse_args()
+    if args.cmd:
+        args.func(args)
+    else:
+        parser.print_usage()

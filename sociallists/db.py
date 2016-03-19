@@ -81,6 +81,10 @@ def load_all_feeds():
     """Load all of the FeedData from the DB"""
     return session.query(FeedData).all()
 
+def load_feed_by_url(url):
+    """Load a single feed by URL"""
+    return session.query(FeedData).filter(FeedData.url == url).first()
+
 def load_history_set(feed):
     history = []
     if len(feed.history) > 0:
@@ -93,12 +97,7 @@ def store_history(feed, history):
 def load_river(url):
     """Load a river structure for the given FeedData"""
     # TODO: Normalize url?
-    feed = (
-        session.query(FeedData)
-        .filter(FeedData.url == url)
-        .first()
-    )
-
+    feed = load_feed_by_url(url)
     return river.wrap_feed_updates(
         [ json.loads(u.data) for u in feed.updates ]
     )
