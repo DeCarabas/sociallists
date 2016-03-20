@@ -1,11 +1,31 @@
 import feedparser
 import logging
+import requests
 
 from datetime import datetime
 from hashlib import sha1
 from sociallists import db, river
 
 logger = logging.getLogger('sociallists.feed')
+
+session = requests.Session()
+
+class RequestsFeedparserShim(object):
+    """Map a requests Response object to one feedparser can use directly."""
+    def __init__(self, response):
+        self.response = response
+
+        self.headers = response.headers
+        self.url = response.url
+        self.status = response.status_code
+        self.code = response.status_code
+
+    def read(self):
+        return self.response.content
+
+    def close(self):
+        self.response.close()
+
 
 def get_entry_id(entry):
     id = entry.get('id', None)
@@ -33,7 +53,19 @@ def update_feed(feed):
             logger.info('Skipping feed %s because it is HTTP_GONE' % feed.url)
             return
 
-        f = feedparser.parse(feed.url, etag=feed.etag_header, modified=feed.modified_header)
+        headers = {
+            'If-Modified-Since': feed.modified_header,
+            'If-None-Match': feed.etag_header,
+        }
+
+        response = session.get(feed.url, headers=headers, timeout=(10.05,30))
+        logger.info('Feed %s => %s, %d' % (feed.url, response.url, response.status_code))
+
+        if response.status_code == 301:
+            logger.info('(Noting permanent redirect for %s => %s)' % (feed.url, response.url))
+            feed.url = response.url
+
+        f = feedparser.parse(RequestsFeedparserShim(response))
         logger.info('Feed {url} has {count} entries'.format(
             url=feed.url,
             count=len(f.entries),
@@ -59,7 +91,7 @@ def update_feed(feed):
 
         feed.etag_header = f.get('etag', None)
         feed.modified_header = f.get('modified', None)
-        feed.last_status = f.get('status', 0)
+        feed.last_status = response.status_code
         db.session.commit()
 
         logger.info('Successfully updated feed {url}'.format(url=feed.url))
