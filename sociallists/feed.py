@@ -20,42 +20,46 @@ def get_entry_id(entry):
     return id
 
 def update_feed(feed):
-    update_time = datetime.utcnow()
-    logger.info('Updating feed {url} ({etag}/{modified}) @ {now}'.format(
-        url=feed.url,
-        etag=feed.etag_header,
-        modified=feed.modified_header,
-        now=update_time.isoformat(),
-    ))
-    f = feedparser.parse(feed.url, etag=feed.etag_header, modified=feed.modified_header)
-    logger.info('Feed {url} has {count} entries'.format(
-        url=feed.url,
-        count=len(f.entries),
-    ))
+    try:
+        update_time = datetime.utcnow()
+        logger.info('Updating feed {url} ({etag}/{modified}) @ {now}'.format(
+            url=feed.url,
+            etag=feed.etag_header,
+            modified=feed.modified_header,
+            now=update_time.isoformat(),
+        ))
+        f = feedparser.parse(feed.url, etag=feed.etag_header, modified=feed.modified_header)
+        logger.info('Feed {url} has {count} entries'.format(
+            url=feed.url,
+            count=len(f.entries),
+        ))
 
-    entries_with_ids = [ (get_entry_id(entry), entry) for entry in f.entries ]
-    history = db.load_history_set(feed)
-    new_entries = [
-        e_id[1] for e_id in entries_with_ids if e_id[0] not in history
-    ]
+        entries_with_ids = [ (get_entry_id(entry), entry) for entry in f.entries ]
+        history = db.load_history_set(feed)
+        new_entries = [
+            e_id[1] for e_id in entries_with_ids if e_id[0] not in history
+        ]
 
-    f.entries = new_entries
-    logger.info('Feed {url} has {count} NEW entries'.format(
-        url=feed.url,
-        count=len(f.entries),
-    ))
+        f.entries = new_entries
+        logger.info('Feed {url} has {count} NEW entries'.format(
+            url=feed.url,
+            count=len(f.entries),
+        ))
 
-    if len(f.entries) > 0:
-        r_new = river.feed_to_river_update(f, feed.next_item_id, update_time)
-        feed.next_item_id += len(f.entries)
-        db.store_river(feed, update_time, r_new)
-        db.store_history(feed, [ e_id[0] for e_id in entries_with_ids ])
+        if len(f.entries) > 0:
+            r_new = river.feed_to_river_update(f, feed.next_item_id, update_time)
+            feed.next_item_id += len(f.entries)
+            db.store_river(feed, update_time, r_new)
+            db.store_history(feed, [ e_id[0] for e_id in entries_with_ids ])
 
-    feed.etag_header = f.get('etag', None)
-    feed.modified_header = f.get('modified', None)
-    db.session.commit()
+        feed.etag_header = f.get('etag', None)
+        feed.modified_header = f.get('modified', None)
+        feed.last_status = f.get('status', 0)
+        db.session.commit()
 
-    logger.info('Successfully updated feed {url}'.format(url=feed.url))
+        logger.info('Successfully updated feed {url}'.format(url=feed.url))
+    except:
+        logger.warning('Error updating feed {url}'.format(url=feed.url))
 
 def update_feeds(args):
     """Update all of the subscribed feeds."""
@@ -86,10 +90,11 @@ def reset_feeds(args):
 def list_feeds(args):
     feeds = db.load_all_feeds()
     for feed in feeds:
-        logger.info('{url} ({etag}/{modified})'.format(
+        logger.info('{url} ({etag}/{modified}/{status})'.format(
             url=feed.url,
             etag=feed.etag_header,
             modified=feed.modified_header,
+            status=feed.last_status,
         ))
 
 def add_feed(args):
