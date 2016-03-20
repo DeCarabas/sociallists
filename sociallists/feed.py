@@ -28,6 +28,11 @@ def update_feed(feed):
             modified=feed.modified_header,
             now=update_time.isoformat(),
         ))
+
+        if feed.last_status == 410:
+            logger.info('Skipping feed %s because it is HTTP_GONE' % feed.url)
+            return
+
         f = feedparser.parse(feed.url, etag=feed.etag_header, modified=feed.modified_header)
         logger.info('Feed {url} has {count} entries'.format(
             url=feed.url,
@@ -123,7 +128,7 @@ if __name__=='__main__':
     cp.set_defaults(func=add_feed)
     cp.add_argument('url', help="The URL to add to the DB")
 
-    cp = sps.add_parser('list', help='List all feeds in the DB')
+    cp = sps.add_parser('list', help='List all feeds in the DB', aliases=["ls"])
     cp.set_defaults(func=list_feeds)
 
     args = parser.parse_args()
