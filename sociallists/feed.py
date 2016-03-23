@@ -1,6 +1,7 @@
 import feedparser
 import logging
 import requests
+import sys
 
 from datetime import datetime
 from hashlib import sha1
@@ -61,7 +62,7 @@ def update_feed(feed):
         response = session.get(feed.url, headers=headers, timeout=(10.05,30))
         logger.info('Feed %s => %s, %d' % (feed.url, response.url, response.status_code))
 
-        if response.status_code == 301:
+        if response.is_permanent_redirect:
             logger.info('(Noting permanent redirect for %s => %s)' % (feed.url, response.url))
             feed.url = response.url
 
@@ -84,7 +85,7 @@ def update_feed(feed):
         ))
 
         if len(f.entries) > 0:
-            r_new = river.feed_to_river_update(f, feed.next_item_id, update_time)
+            r_new = river.feed_to_river_update(f, feed.next_item_id, update_time, session)
             feed.next_item_id += len(f.entries)
             db.store_river(feed, update_time, r_new)
             db.store_history(feed, [ e_id[0] for e_id in entries_with_ids ])
@@ -96,7 +97,8 @@ def update_feed(feed):
 
         logger.info('Successfully updated feed {url}'.format(url=feed.url))
     except:
-        logger.warning('Error updating feed {url}'.format(url=feed.url))
+        e = sys.exc_info()
+        logger.warning('Error updating feed {url}: {e}'.format(url=feed.url,e=e))
 
 def update_feeds(args):
     """Update all of the subscribed feeds."""

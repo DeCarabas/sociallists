@@ -1,8 +1,23 @@
+import requests
 import time
+
 from datetime import datetime
 from email import utils
 from html.parser import HTMLParser
 from itertools import count
+
+def is_guid_link(guid, session=None):
+    """Figure out if the given GUID appears to be a link to something."""
+    if not guid:
+        return False
+    if session is None:
+        session = requests.Session()
+    try:
+        resp = session.head(guid, timeout=30)
+        resp.raise_for_status()
+        return True
+    except:
+        return False
 
 def strip_html(text):
     """Remove markup and return the raw text.
@@ -62,16 +77,27 @@ def get_entry_pubDate(e):
     else:
         return ''
 
-def entry_to_river(entry, i):
+def get_entry_permalink(e, session=None):
+    guid = e.get('guid', None)
+    link = e.get('link', None)
+    if link == guid:
+        return link
+    if guid and is_guid_link(guid, session):
+        return guid
+    else:
+        return ''
+
+def entry_to_river(entry, i, session=None):
     """Convert a feed entry to a river.js item"""
     # TODO: See if you can pull a thumbnail.
     # TODO: See if you can pull enclosures.
+
     return {
         "title": entry.get('title', ''),
         "link": entry.get('link', ''),
         "body": convert_description(entry.get('description', '')),
         "pubDate": get_entry_pubDate(entry),
-        "permaLink": "",  # Not sure why to populate this, so skipping.
+        "permaLink": get_entry_permalink(entry, session),
         "id": str(i),
     }
 
@@ -86,7 +112,7 @@ def wrap_feed_updates(feed_updates):
         },
     }
 
-def feed_to_river_update(feed, start_id, update_time = None):
+def feed_to_river_update(feed, start_id, update_time=None, session=None):
     """Convert a feed object from feedparser to a river.js format"""
     if update_time is None:
         update_time = datetime.utcnow()
@@ -97,7 +123,10 @@ def feed_to_river_update(feed, start_id, update_time = None):
         "websiteUrl": feed.feed.link,
         "feedDescription": feed.feed.subtitle,
         "whenLastUpdate": datetime_to_rfc2822(update_time),
-        "item": [entry_to_river(e, i) for e,i in zip(feed.entries, count(start_id))],
+        "item": [
+            entry_to_river(e, i, session)
+            for e,i in zip(feed.entries, count(start_id))
+        ],
     }
 
 def feed_to_river(feed, start_id):
