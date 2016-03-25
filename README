@@ -1,0 +1,7 @@
+Setting up the database
+- Install postgres
+- Create a database named 'sociallists'
+- In python, do:
+
+  >>> from sociallists import db
+  >>> db.Base.metadata.create_all()
