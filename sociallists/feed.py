@@ -7,6 +7,7 @@ from datetime import datetime
 from gevent import monkey,spawn,wait
 from hashlib import sha1
 from sociallists import db, river
+from time import perf_counter
 
 logger = logging.getLogger('sociallists.feed')
 
@@ -120,6 +121,7 @@ def update_feed(feed):
 
 def update_feeds(args):
     """Update all of the subscribed feeds."""
+    start_time = perf_counter()
     if args.all:
         feeds = db.load_all_feeds()
     else:
@@ -132,6 +134,16 @@ def update_feeds(args):
     else:
         for feed in feeds:
             update_feed(feed)
+
+    end_time = perf_counter()
+    elapsed_time = end_time - start_time
+    logger.info(
+        'Updated {count} feeds in {time:.3} seconds ({fps:.2} feeds/sec)'.format(
+            count=len(feeds),
+            time=elapsed_time,
+            fps=len(feeds)/elapsed_time,
+        )
+    )
 
 def reset_feeds(args):
     """Reset cached state of all of the subscribed feeds."""
