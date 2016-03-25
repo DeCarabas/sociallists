@@ -2,7 +2,7 @@ import json
 import os
 
 from datetime import datetime
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Table, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship
 from sqlalchemy.schema import Column, ForeignKey
@@ -14,6 +14,23 @@ engine = create_engine(os.environ.get('DB_CONNECTION_STRING', "postgresql:///soc
 session = scoped_session(sessionmaker(bind=engine, autoflush=False))
 
 Base = declarative_base(bind=engine)
+
+river_feeds = Table('river_feeds', Base.metadata,
+    Column('river_id', ForeignKey('rivers.id'), primary_key=True),
+    Column('feed_id', ForeignKey('feeds.id'), primary_key=True),
+)
+
+class RiverData(Base):
+    __tablename__ = 'rivers'
+    __table_args__ = (
+        UniqueConstraint('user_id', 'name'),
+    )
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    user_id = Column(Unicode, nullable=False, index=True)
+    name = Column(Unicode, nullable=False)
+
+    feeds = relationship('FeedData', secondary=river_feeds)
 
 class RiverUpdateData(Base):
     __tablename__ = 'river_updates'
@@ -63,6 +80,14 @@ class FeedData(Base):
     def __repr__(self):
         return "<FeedData(id=%d, url='%s')>" % (self.id, self.url)
 
+    def __str__(self):
+        return '{url} ({etag}/{modified}/{status})'.format(
+            url=self.url,
+            etag=self.etag_header,
+            modified=self.modified_header,
+            status=self.last_status,
+        )
+
     def reset(self):
         self.etag_header = None
         self.modified_header = None
@@ -75,7 +100,7 @@ class FeedData(Base):
 def add_feed(url):
     feed = FeedData(url=url, last_status=0, next_item_id=0, history='')
     session.add(feed)
-    session.commit()
+    return feed
 
 def load_all_feeds():
     """Load all of the FeedData from the DB"""
@@ -110,3 +135,24 @@ def store_river(feed, update_time, river):
         data = json.dumps(river),
     )
     session.add(data)
+    return data
+
+def load_river_by_name(user, river_name):
+    """Load a RiverData object by user ID and name"""
+    return (
+        session.query(RiverData)
+        .filter(RiverData.user_id == user)
+        .filter(RiverData.name == river_name)
+        .one_or_none()
+    )
+
+def create_river(user, river_name):
+    data = RiverData(user_id=user, name=river_name)
+    session.add(data)
+    return data
+
+def load_rivers_by_user(user):
+    """Load all the RiverData objects for a given user id."""
+    return (
+        session.query(RiverData).filter(RiverData.user_id == user).all()
+    )

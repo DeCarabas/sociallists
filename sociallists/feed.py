@@ -100,6 +100,9 @@ def update_feed(feed):
         e = sys.exc_info()
         logger.warning('Error updating feed {url}: {e}'.format(url=feed.url,e=e))
 
+
+#######################################
+
 def update_feeds(args):
     """Update all of the subscribed feeds."""
     if args.all:
@@ -138,6 +141,7 @@ def list_feeds(args):
 
 def add_feed(args):
     db.add_feed(args.url)
+    db.session.commit()
 
 if __name__=='__main__':
     import argparse

@@ -1,10 +1,15 @@
+import logging
 import requests
 import time
+
+from sociallists import db
 
 from datetime import datetime
 from email import utils
 from html.parser import HTMLParser
 from itertools import count
+
+logger = logging.getLogger('sociallists.river')
 
 def is_guid_link(guid, session=None):
     """Figure out if the given GUID appears to be a link to something."""
@@ -132,3 +137,81 @@ def feed_to_river_update(feed, start_id, update_time=None, session=None):
 def feed_to_river(feed, start_id):
     """Convert a feed object from feedparser to a river.js format"""
     return wrap_feed_updates([feed_to_river_update(feed, start_id)])
+
+#######################################
+
+def add_feed(args):
+    feed = db.load_feed_by_url(args.url)
+    if not feed:
+        logger.info("Feed '{url}' not found in database. Adding...".format(
+            url=args.url,
+        ))
+        feed = db.add_feed(args.url)
+
+    river = db.load_river_by_name(args.user, args.river)
+    if not river:
+        logger.info('River {user}/{river} not found, creating...'.format(
+            user=args.user,
+            river=args.river,
+        ))
+        river = db.create_river(args.user, args.river)
+
+    if feed in river.feeds:
+        logger.info("Feed '{url}' already in river '{user}/{river}'...".format(
+            url=args.url,
+            user=args.user,
+            river=args.river,
+        ))
+    else:
+        logger.info("Added feed '{url}' to river '{user}/{river}'...".format(
+            url=args.url,
+            user=args.user,
+            river=args.river,
+        ))
+        river.feeds.append(feed)
+    db.session.commit()
+
+def list_rivers(args):
+    rivers = db.load_rivers_by_user(args.user)
+    for r in rivers:
+        logger.info('{name}'.format(
+            name=r.name,
+        ))
+    logger.info('{count} river(s)'.format(
+        count=len(rivers),
+    ))
+
+def show_river(args):
+    river = db.load_river_by_name(args.user, args.name)
+    for feed in river.feeds:
+        logger.info(str(feed))
+    logger.info('{count} feeds(s)'.format(
+        count=len(river.feeds),
+    ))
+
+if __name__=='__main__':
+    import argparse
+    logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+
+    parser = argparse.ArgumentParser(description="sociallists river related commands")
+    parser.add_argument("-u", "--user", help="The user whose list we're modifying", required=True)
+
+    sps = parser.add_subparsers(dest='cmd')
+
+    cp = sps.add_parser('add', help="Add a feed to a user's river")
+    cp.set_defaults(func=add_feed)
+    cp.add_argument('river', help="The name of the river to augment")
+    cp.add_argument('url', help="The URL to add to the DB")
+
+    cp = sps.add_parser('list', help="List all the user's rivers", aliases=["ls"])
+    cp.set_defaults(func=list_rivers)
+
+    cp = sps.add_parser('show', help="Show the feeds in a particular river")
+    cp.set_defaults(func=show_river)
+    cp.add_argument('name', help="The river name to show", default=None)
+
+    args = parser.parse_args()
+    if args.cmd:
+        args.func(args)
+    else:
+        parser.print_usage()
