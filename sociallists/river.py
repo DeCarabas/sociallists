@@ -78,7 +78,7 @@ def get_entry_pubDate(e):
         tt = e.get('updated_parsed', None)
 
     if tt is not None:
-        return time_to_rfc2822(e.published_parsed)
+        return time_to_rfc2822(tt)
     else:
         return ''
 
@@ -123,10 +123,10 @@ def feed_to_river_update(feed, start_id, update_time=None, session=None):
         update_time = datetime.utcnow()
 
     return {
-        "feedTitle": feed.feed.title,
-        "feedUrl": feed.href,
-        "websiteUrl": feed.feed.link,
-        "feedDescription": feed.feed.subtitle,
+        "feedTitle": feed.feed.get('title', ''),
+        "feedUrl": feed.get('href', ''),
+        "websiteUrl": feed.feed.get('link', ''),
+        "feedDescription": feed.feed.get('subtitle', ''),
         "whenLastUpdate": datetime_to_rfc2822(update_time),
         "item": [
             entry_to_river(e, i, session)
@@ -221,7 +221,6 @@ def import_opml(args):
 
 if __name__=='__main__':
     import argparse
-    logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
     parser = argparse.ArgumentParser(description="sociallists river related commands")
     parser.add_argument("-u", "--user", help="The user whose list we're modifying", required=True)
@@ -246,6 +245,10 @@ if __name__=='__main__':
 
     args = parser.parse_args()
     if args.cmd:
+        logging.basicConfig(
+            format='%(asctime)s %(message)s',
+            level=logging.ERROR,
+        )
         args.func(args)
     else:
         parser.print_usage()

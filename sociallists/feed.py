@@ -157,7 +157,6 @@ def add_feed(args):
 
 if __name__=='__main__':
     import argparse
-    logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
     parser = argparse.ArgumentParser(description="sociallists feed related commands")
     sps = parser.add_subparsers(dest='cmd')
@@ -183,6 +182,10 @@ if __name__=='__main__':
 
     args = parser.parse_args()
     if args.cmd:
+        logging.basicConfig(
+            format='%(asctime)s %(message)s',
+            level=logging.WARNING,
+        )
         args.func(args)
     else:
         parser.print_usage()
