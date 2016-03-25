@@ -33,51 +33,32 @@ How it works:
   6. <A> links to feeds on external servers containing "rss", "rdf", "xml", or "atom"
   7. Try some guesses about common places for feeds (index.xml, atom.xml, etc.).
   8. As a last ditch effort, we search Syndic8 for feeds matching the URI
+
+Changes since 1.3:
+  - Convert to python 3
+  - Use requests instead of urllib to make sure I get unicode right
+  - Use requests timeouts instead of threading timeouts
 """
 
-__version__ = "1.371"
-__date__ = "2006-04-24"
-__maintainer__ = "Aaron Swartz (me@aaronsw.com)"
-__author__ = "Mark Pilgrim (http://diveintomark.org)"
-__copyright__ = "Copyright 2002-4, Mark Pilgrim; 2006 Aaron Swartz"
+__version__ = "1.4"
+__date__ = "2016-03-25"
+__maintainer__ = "John Doty (john@d0ty.me)"
+__author__ = "Mark Pilgrim (http://diveintomark.org), Aaron Swartz (me@aaronsw.com)"
+__copyright__ = "Copyright 2002-4, Mark Pilgrim; 2006 Aaron Swartz; 2016 John Doty"
 __license__ = "Python"
 __credits__ = """Abe Fettig for a patch to sort Syndic8 feeds by popularity
 Also Jason Diamond, Brian Lalor for bug reporting and patches"""
 
 _debug = 0
 
-import sgmllib, urllib.request, urllib.parse, urllib.error, urllib.parse, re, sys, urllib.robotparser
-
-import threading
-class TimeoutError(Exception): pass
-def timelimit(timeout):
-    """borrowed from web.py"""
-    def _1(function):
-        def _2(*args, **kw):
-            class Dispatch(threading.Thread):
-                def __init__(self):
-                    threading.Thread.__init__(self)
-                    self.result = None
-                    self.error = None
-
-                    self.setDaemon(True)
-                    self.start()
-
-                def run(self):
-                    try:
-                        self.result = function(*args, **kw)
-                    except:
-                        self.error = sys.exc_info()
-
-            c = Dispatch()
-            c.join(timeout)
-            if c.isAlive():
-                raise TimeoutError('took too long')
-            if c.error:
-                raise c.error[0](c.error[1])
-            return c.result
-        return _2
-    return _1
+import sgmllib
+import urllib.error
+import urllib.parse
+import urllib.request
+import urllib.robotparser
+import re
+import requests
+import sys
 
 # XML-RPC support allows feedfinder to query Syndic8 for possible matches.
 # Python 2.3 now comes with this module by default, otherwise you can download it
@@ -86,13 +67,6 @@ try:
 except ImportError:
     xmlrpclib = None
 
-if not dict:
-    def dict(aList):
-        rc = {}
-        for k, v in aList:
-            rc[k] = v
-        return rc
-
 def _debuglog(message):
     if _debug: print(message)
 
@@ -100,12 +74,11 @@ class URLGatekeeper:
     """a class to track robots.txt rules across multiple servers"""
     def __init__(self):
         self.rpcache = {} # a dictionary of RobotFileParser objects, by domain
-        self.urlopener = urllib.request.FancyURLopener()
-        self.urlopener.version = "feedfinder/" + __version__ + " " + self.urlopener.version + " +http://www.aaronsw.com/2002/feedfinder/"
-        _debuglog(self.urlopener.version)
-        self.urlopener.addheaders = [('User-agent', self.urlopener.version)]
-        urllib.robotparser.URLopener.version = self.urlopener.version
-        urllib.robotparser.URLopener.addheaders = self.urlopener.addheaders
+        self.user_agent = "feedfinder/" + __version__
+        # self.urlopener = urllib.request.FancyURLopener()
+        # self.urlopener.version = "feedfinder/" + __version__ + " " + self.urlopener.version + " +http://www.aaronsw.com/2002/feedfinder/"
+        # _debuglog(self.urlopener.version)
+        # self.urlopener.addheaders = [('User-agent', self.urlopener.version)]
 
     def _getrp(self, url):
         protocol, domain = urllib.parse.urlparse(url)[:2]
@@ -124,15 +97,15 @@ class URLGatekeeper:
 
     def can_fetch(self, url):
         rp = self._getrp(url)
-        allow = rp.can_fetch(self.urlopener.version, url)
+        allow = rp.can_fetch(self.user_agent, url)
         _debuglog("gatekeeper of %s says %s" % (url, allow))
         return allow
 
-    @timelimit(10)
     def get(self, url, check=True):
-        if check and not self.can_fetch(url): return ''
+        if check and not self.can_fetch(url):
+            return ''
         try:
-            return self.urlopener.open(url).read()
+            return requests.get(url, timeout=10).text
         except:
             return ''
 
