@@ -155,27 +155,27 @@ def aggregate_river(user, name):
 def add_river_and_feed(user, river_name, url):
     feed = db.load_feed_by_url(url)
     if not feed:
-        logger.info("Feed '{url}' not found in database. Adding...".format(
+        print("Feed '{url}' not found in database. Adding...".format(
             url=url,
         ))
         feed = db.add_feed(url)
 
     river = db.load_river_by_name(user, river_name)
     if not river:
-        logger.info('River {user}/{river} not found, creating...'.format(
+        print('River {user}/{river} not found, creating...'.format(
             user=user,
             river=river_name,
         ))
         river = db.create_river(user, river_name)
 
     if feed in river.feeds:
-        logger.info("Feed '{url}' already in river '{user}/{river}'...".format(
+        print("Feed '{url}' already in river '{user}/{river}'...".format(
             url=url,
             user=user,
             river=river_name,
         ))
     else:
-        logger.info("Added feed '{url}' to river '{user}/{river}'...".format(
+        print("Added feed '{url}' to river '{user}/{river}'...".format(
             url=url,
             user=user,
             river=river_name,
@@ -189,18 +189,18 @@ def add_feed(args):
 def list_rivers(args):
     rivers = db.load_rivers_by_user(args.user)
     for r in rivers:
-        logger.info('{name}'.format(
+        print('{name}'.format(
             name=r.name,
         ))
-    logger.info('{count} river(s)'.format(
+    print('{count} river(s)'.format(
         count=len(rivers),
     ))
 
 def show_river(args):
     river = db.load_river_by_name(args.user, args.name)
     for feed in river.feeds:
-        logger.info(str(feed))
-    logger.info('{count} feeds(s)'.format(
+        print(str(feed))
+    print('{count} feeds(s)'.format(
         count=len(river.feeds),
     ))
 
@@ -212,7 +212,7 @@ def import_opml(args):
         if len(item.categories) > 0:
             rivers = [('/'.join(c for c in cats)) for cats in item.categories]
         for river_name in rivers:
-            logger.info("Importing feed %s to river %s" % (
+            print("Importing feed %s to river %s" % (
                 item.url,
                 river_name,
             ))
@@ -247,7 +247,7 @@ if __name__=='__main__':
     if args.cmd:
         logging.basicConfig(
             format='%(asctime)s %(message)s',
-            level=logging.ERROR,
+            level=logging.WARNING,
         )
         args.func(args)
     else:

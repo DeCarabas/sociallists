@@ -133,7 +133,7 @@ def reset_feeds(args):
         feeds = [ db.load_feed_by_url(args.url) ]
 
     for feed in feeds:
-        logger.info('Resetting feed {url} ({etag}/{modified})'.format(
+        print('Resetting feed {url} ({etag}/{modified})'.format(
             url=feed.url,
             etag=feed.etag_header,
             modified=feed.modified_header,
@@ -144,12 +144,12 @@ def reset_feeds(args):
 def list_feeds(args):
     feeds = db.load_all_feeds()
     for feed in feeds:
-        logger.info('{url} ({etag}/{modified}/{status})'.format(
-            url=feed.url,
-            etag=feed.etag_header,
-            modified=feed.modified_header,
-            status=feed.last_status,
+        print('{feed}'.format(
+            feed=str(feed),
         ))
+    print('{count} feed(s)'.format(
+        count=len(feeds),
+    ))
 
 def add_feed(args):
     db.add_feed(args.url)
