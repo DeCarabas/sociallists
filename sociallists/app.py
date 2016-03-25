@@ -9,16 +9,13 @@ app = Flask('sociallists')
 
 @app.route("/api/v1/river/<user>/<id>")
 def get_river(user,id):
-    db_river = db.load_river_by_name(user,id)
-    feed_updates = []
-    if db_river:
-        updates = [
-            update for feed in db_river.feeds for update in feed.updates
-        ]
-        updates.sort(reverse=True, key=lambda u: u.update_time)
-        feed_updates = [ json.loads(u.data) for u in updates ]
+    r = river.aggregate_river(user,id)
+    result = json.dumps(r, indent=2, sort_keys=True)
+    return (result, 200, {'content-type': 'application/json'})
 
-    r = river.wrap_feed_updates(feed_updates)
+@app.route("/api/v1/river/<user>/<id>/public")
+def get_public_river(user,id):
+    r = river.aggregate_river(user,id)
     result = "onGetRiverStream("+json.dumps(r, indent=2, sort_keys=True)+");"
     return (result, 200, {'content-type': 'application/javascript'})
 

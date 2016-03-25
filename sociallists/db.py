@@ -8,8 +8,6 @@ from sqlalchemy.orm import scoped_session, sessionmaker, relationship
 from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.types import DateTime, Integer, Unicode, UnicodeText, BigInteger
 
-from sociallists import river
-
 engine = create_engine(os.environ.get('DB_CONNECTION_STRING', "postgresql:///sociallists"))
 session = scoped_session(sessionmaker(bind=engine, autoflush=False))
 
@@ -119,13 +117,9 @@ def load_history_set(feed):
 def store_history(feed, history):
     feed.history = json.dumps(list(history))
 
-def load_river(url):
-    """Load a river structure for the given FeedData"""
-    # TODO: Normalize url?
-    feed = load_feed_by_url(url)
-    return river.wrap_feed_updates(
-        [ json.loads(u.data) for u in feed.updates ]
-    )
+def load_river_update(update):
+    """Decode the river update structure in the update object"""
+    return json.loads(update.data)
 
 def store_river(feed, update_time, river):
     """Store a river structure for the given FeedData"""

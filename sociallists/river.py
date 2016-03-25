@@ -138,6 +138,18 @@ def feed_to_river(feed, start_id):
     """Convert a feed object from feedparser to a river.js format"""
     return wrap_feed_updates([feed_to_river_update(feed, start_id)])
 
+def aggregate_river(user, name):
+    """Aggregate a set of feed updates for a given river."""
+    db_river = db.load_river_by_name(user,name)
+    feed_updates = []
+    if db_river:
+        updates = [
+            update for feed in db_river.feeds for update in feed.updates
+        ]
+        updates.sort(reverse=True, key=lambda u: u.update_time)
+        feed_updates = [ db.load_river_update(u) for u in updates ]
+    return wrap_feed_updates(feed_updates)
+
 #######################################
 
 def add_feed(args):
