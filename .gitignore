@@ -83,3 +83,9 @@ ENV/
 
 # Spyder project settings
 .spyderproject
+
+# Node stuff
+node_modules/
+
+# VERY SPECIFIC OUTPUTS?
+sociallists/static/scripts/bundle.js
