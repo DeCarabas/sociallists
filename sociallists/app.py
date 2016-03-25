@@ -22,12 +22,13 @@ def get_river(user,id):
     result = "onGetRiverStream("+json.dumps(r, indent=2, sort_keys=True)+");"
     return (result, 200, {'content-type': 'application/javascript'})
 
-@app.route("/api/v1/feed/<id>")
-def get_feed_river(id):
-    river = db.load_river("http://davepeck.org/feed/")
+@app.route("/api/v1/river/<user>")
+def get_river_list(user):
+    rivers = db.load_rivers_by_user(user)
+    result = json.dumps({
+        'rivers': [ r.name for r in rivers ]
+    }, indent=2, sort_keys=True)
 
-    # TODO: jsonp serialize
-    result = "onGetRiverStream("+json.dumps(river, indent=2, sort_keys=True)+");"
     return (result, 200, {'content-type': 'application/javascript'})
 
 @app.route("/")
