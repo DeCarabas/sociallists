@@ -10,6 +10,9 @@ from sociallists import db, river
 logger = logging.getLogger('sociallists.feed')
 
 session = requests.Session()
+a = requests.adapters.HTTPAdapter(max_retries=3)
+session.mount('http://', a)
+session.mount('https://', a)
 
 class RequestsFeedparserShim(object):
     """Map a requests Response object to one feedparser can use directly."""
