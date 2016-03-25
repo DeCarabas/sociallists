@@ -125,7 +125,7 @@ def update_feeds(args):
     else:
         feeds = [ db.load_feed_by_url(args.url) ]
 
-    if args.async:
+    if not args.sync:
         monkey.patch_all()
         threads = [spawn(update_feed, feed) for feed in feeds]
         wait(threads)
@@ -171,7 +171,7 @@ if __name__=='__main__':
 
     cp = sps.add_parser('update', help='Update one or all feeds')
     cp.set_defaults(func=update_feeds)
-    cp.add_argument("--async", help="Update the feeds asynchronously", action="store_true")
+    cp.add_argument("--sync", help="Update the feeds asynchronously", action="store_true")
     g = cp.add_mutually_exclusive_group(required=True)
     g.add_argument("-a", "--all", help="Update all feeds", action="store_true")
     g.add_argument("-u", "--url", help="Update the specified URL")
@@ -193,7 +193,7 @@ if __name__=='__main__':
     if args.cmd:
         logging.basicConfig(
             format='%(asctime)s %(message)s',
-            level=logging.INFO,
+            level=logging.WARNING,
         )
         args.func(args)
     else:
