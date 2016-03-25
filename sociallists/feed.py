@@ -4,15 +4,18 @@ import requests
 import sys
 
 from datetime import datetime
+from gevent import monkey,spawn,wait
 from hashlib import sha1
 from sociallists import db, river
 
 logger = logging.getLogger('sociallists.feed')
 
-session = requests.Session()
+s = requests.Session()
 a = requests.adapters.HTTPAdapter(max_retries=3)
-session.mount('http://', a)
-session.mount('https://', a)
+s.mount('http://', a)
+s.mount('https://', a)
+
+session = s
 
 class RequestsFeedparserShim(object):
     """Map a requests Response object to one feedparser can use directly."""
@@ -122,8 +125,13 @@ def update_feeds(args):
     else:
         feeds = [ db.load_feed_by_url(args.url) ]
 
-    for feed in feeds:
-        update_feed(feed)
+    if args.async:
+        monkey.patch_all()
+        threads = [spawn(update_feed, feed) for feed in feeds]
+        wait(threads)
+    else:
+        for feed in feeds:
+            update_feed(feed)
 
 def reset_feeds(args):
     """Reset cached state of all of the subscribed feeds."""
@@ -163,6 +171,7 @@ if __name__=='__main__':
 
     cp = sps.add_parser('update', help='Update one or all feeds')
     cp.set_defaults(func=update_feeds)
+    cp.add_argument("--async", help="Update the feeds asynchronously", action="store_true")
     g = cp.add_mutually_exclusive_group(required=True)
     g.add_argument("-a", "--all", help="Update all feeds", action="store_true")
     g.add_argument("-u", "--url", help="Update the specified URL")
@@ -184,7 +193,7 @@ if __name__=='__main__':
     if args.cmd:
         logging.basicConfig(
             format='%(asctime)s %(message)s',
-            level=logging.WARNING,
+            level=logging.INFO,
         )
         args.func(args)
     else:
