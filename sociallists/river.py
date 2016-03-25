@@ -152,35 +152,38 @@ def aggregate_river(user, name):
 
 #######################################
 
-def add_feed(args):
-    feed = db.load_feed_by_url(args.url)
+def add_river_and_feed(user, river_name, url):
+    feed = db.load_feed_by_url(url)
     if not feed:
         logger.info("Feed '{url}' not found in database. Adding...".format(
-            url=args.url,
+            url=url,
         ))
-        feed = db.add_feed(args.url)
+        feed = db.add_feed(url)
 
-    river = db.load_river_by_name(args.user, args.river)
+    river = db.load_river_by_name(user, river_name)
     if not river:
         logger.info('River {user}/{river} not found, creating...'.format(
-            user=args.user,
-            river=args.river,
+            user=user,
+            river=river_name,
         ))
-        river = db.create_river(args.user, args.river)
+        river = db.create_river(user, river_name)
 
     if feed in river.feeds:
         logger.info("Feed '{url}' already in river '{user}/{river}'...".format(
-            url=args.url,
-            user=args.user,
-            river=args.river,
+            url=url,
+            user=user,
+            river=river_name,
         ))
     else:
         logger.info("Added feed '{url}' to river '{user}/{river}'...".format(
-            url=args.url,
-            user=args.user,
-            river=args.river,
+            url=url,
+            user=user,
+            river=river_name,
         ))
         river.feeds.append(feed)
+
+def add_feed(args):
+    add_river_and_feed(args.user, args.river, args.url)
     db.session.commit()
 
 def list_rivers(args):
@@ -201,6 +204,21 @@ def show_river(args):
         count=len(river.feeds),
     ))
 
+def import_opml(args):
+    import listparser
+    l = listparser.parse(args.file)
+    for item in l.feeds:
+        rivers = ['Main']
+        if len(item.categories) > 0:
+            rivers = [('/'.join(c for c in cats)) for cats in item.categories]
+        for river_name in rivers:
+            logger.info("Importing feed %s to river %s" % (
+                item.url,
+                river_name,
+            ))
+            add_river_and_feed(args.user, river_name, item.url)
+            db.session.commit()
+
 if __name__=='__main__':
     import argparse
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
@@ -214,6 +232,10 @@ if __name__=='__main__':
     cp.set_defaults(func=add_feed)
     cp.add_argument('river', help="The name of the river to augment")
     cp.add_argument('url', help="The URL to add to the DB")
+
+    cp = sps.add_parser('import', help="Import an OPML file for a user")
+    cp.set_defaults(func=import_opml)
+    cp.add_argument('file', help="The file to import")
 
     cp = sps.add_parser('list', help="List all the user's rivers", aliases=["ls"])
     cp.set_defaults(func=list_rivers)
