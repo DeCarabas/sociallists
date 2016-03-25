@@ -40,59 +40,68 @@ def get_entry_id(entry):
         ).encode('utf-8')).hexdigest()
     return id
 
+def do_update_feed(feed):
+    update_time = datetime.utcnow()
+    logger.info('Updating feed {url} ({etag}/{modified}) @ {now}'.format(
+        url=feed.url,
+        etag=feed.etag_header,
+        modified=feed.modified_header,
+        now=update_time.isoformat(),
+    ))
+
+    if feed.last_status == 410:
+        logger.info('Skipping feed %s because it is HTTP_GONE' % feed.url)
+        return
+
+    headers = {
+        'If-Modified-Since': feed.modified_header,
+        'If-None-Match': feed.etag_header,
+    }
+
+    response = session.get(feed.url, headers=headers, timeout=(10.05,30))
+    logger.info('Feed %s => %s, %d' % (feed.url, response.url, response.status_code))
+
+    # The .url properties of the history responses are the URLs *before* the redirect
+    # was followed, so it's the .url of the next response we care about. As
+    # soon as a response in the history is not a permanent redirect, we can
+    # record that URL, and stop chasing the chain.
+    response_history = response.history + [ response ]
+    for h in response_history:
+        if not h.is_permanent_redirect:
+            feed.url = h.url
+            break
+
+    f = feedparser.parse(RequestsFeedparserShim(response))
+    logger.info('Feed {url} has {count} entries'.format(
+        url=feed.url,
+        count=len(f.entries),
+    ))
+
+    entries_with_ids = [ (get_entry_id(entry), entry) for entry in f.entries ]
+    history = db.load_history_set(feed)
+    new_entries = [
+        e_id[1] for e_id in entries_with_ids if e_id[0] not in history
+    ]
+
+    f.entries = new_entries
+    logger.info('Feed {url} has {count} NEW entries'.format(
+        url=feed.url,
+        count=len(f.entries),
+    ))
+
+    if len(f.entries) > 0:
+        r_new = river.feed_to_river_update(f, feed.next_item_id, update_time, session)
+        feed.next_item_id += len(f.entries)
+        db.store_river(feed, update_time, r_new)
+        db.store_history(feed, [ e_id[0] for e_id in entries_with_ids ])
+
+    feed.etag_header = f.get('etag', None)
+    feed.modified_header = f.get('modified', None)
+    feed.last_status = response.status_code
+
 def update_feed(feed):
     try:
-        update_time = datetime.utcnow()
-        logger.info('Updating feed {url} ({etag}/{modified}) @ {now}'.format(
-            url=feed.url,
-            etag=feed.etag_header,
-            modified=feed.modified_header,
-            now=update_time.isoformat(),
-        ))
-
-        if feed.last_status == 410:
-            logger.info('Skipping feed %s because it is HTTP_GONE' % feed.url)
-            return
-
-        headers = {
-            'If-Modified-Since': feed.modified_header,
-            'If-None-Match': feed.etag_header,
-        }
-
-        response = session.get(feed.url, headers=headers, timeout=(10.05,30))
-        logger.info('Feed %s => %s, %d' % (feed.url, response.url, response.status_code))
-
-        if response.is_permanent_redirect:
-            logger.info('(Noting permanent redirect for %s => %s)' % (feed.url, response.url))
-            feed.url = response.url
-
-        f = feedparser.parse(RequestsFeedparserShim(response))
-        logger.info('Feed {url} has {count} entries'.format(
-            url=feed.url,
-            count=len(f.entries),
-        ))
-
-        entries_with_ids = [ (get_entry_id(entry), entry) for entry in f.entries ]
-        history = db.load_history_set(feed)
-        new_entries = [
-            e_id[1] for e_id in entries_with_ids if e_id[0] not in history
-        ]
-
-        f.entries = new_entries
-        logger.info('Feed {url} has {count} NEW entries'.format(
-            url=feed.url,
-            count=len(f.entries),
-        ))
-
-        if len(f.entries) > 0:
-            r_new = river.feed_to_river_update(f, feed.next_item_id, update_time, session)
-            feed.next_item_id += len(f.entries)
-            db.store_river(feed, update_time, r_new)
-            db.store_history(feed, [ e_id[0] for e_id in entries_with_ids ])
-
-        feed.etag_header = f.get('etag', None)
-        feed.modified_header = f.get('modified', None)
-        feed.last_status = response.status_code
+        do_update_feed(feed)
         db.session.commit()
 
         logger.info('Successfully updated feed {url}'.format(url=feed.url))
