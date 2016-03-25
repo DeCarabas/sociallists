@@ -1,7 +1,7 @@
 import feedparser
 import json
 
-from flask import Flask, render_template
+from flask import Flask, render_template, url_for
 from sociallists.river import feed_to_river
 from sociallists import db, river
 
@@ -26,7 +26,13 @@ def get_river(user,id):
 def get_river_list(user):
     rivers = db.load_rivers_by_user(user)
     result = json.dumps({
-        'rivers': [ r.name for r in rivers ]
+        'rivers': [
+            {
+                'name':r.name,
+                'url':url_for('get_river', user=user, id=r.name),
+            }
+            for r in rivers
+        ]
     }, indent=2, sort_keys=True)
 
     return (result, 200, {'content-type': 'application/javascript'})
