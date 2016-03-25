@@ -1,0 +1,2 @@
+recursive-include sociallists/templates *
+recursive-include sociallists/static *
