@@ -11,7 +11,7 @@ app = Flask('sociallists')
 def get_river(user,id):
     db_river = db.load_river_by_name(user,id)
     feed_updates = []
-    if river:
+    if db_river:
         updates = [
             update for feed in db_river.feeds for update in feed.updates
         ]
