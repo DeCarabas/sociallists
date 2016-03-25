@@ -1,23 +1,16 @@
 import feedparser
 import json
 
-from flask import Flask, render_template, url_for
+from flask import Flask, g, render_template, url_for
 from sociallists.river import feed_to_river
 from sociallists import db, river
 
 app = Flask('sociallists')
 
-@app.route("/api/v1/river/<user>/<id>")
-def get_river(user,id):
-    r = river.aggregate_river(user,id)
-    result = json.dumps(r, indent=2, sort_keys=True)
-    return (result, 200, {'content-type': 'application/json'})
-
-@app.route("/api/v1/river/<user>/<id>/public")
-def get_public_river(user,id):
-    r = river.aggregate_river(user,id)
-    result = "onGetRiverStream("+json.dumps(r, indent=2, sort_keys=True)+");"
-    return (result, 200, {'content-type': 'application/javascript'})
+@app.route("/")
+def index():
+    g.is_debug = app.debug
+    return render_template('index.html')
 
 @app.route("/api/v1/river/<user>")
 def get_river_list(user):
@@ -34,9 +27,17 @@ def get_river_list(user):
 
     return (result, 200, {'content-type': 'application/javascript'})
 
-@app.route("/")
-def index():
-    return render_template('index.html')
+@app.route("/api/v1/river/<user>/<id>")
+def get_river(user,id):
+    r = river.aggregate_river(user,id)
+    result = json.dumps(r, indent=2, sort_keys=True)
+    return (result, 200, {'content-type': 'application/json'})
+
+@app.route("/api/v1/river/<user>/<id>/public")
+def get_public_river(user,id):
+    r = river.aggregate_river(user,id)
+    result = "onGetRiverStream("+json.dumps(r, indent=2, sort_keys=True)+");"
+    return (result, 200, {'content-type': 'application/javascript'})
 
 @app.teardown_request
 def shutdown_session(exception=None):
