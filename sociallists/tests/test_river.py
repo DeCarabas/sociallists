@@ -11,6 +11,6 @@ def test_convert_description_is_small(description):
 
 def test_feed_to_river_all_entries_matched():
     f = feedparser.parse('http://www.forbes.com/news/index.xml')
-    r = river.feed_to_river(f, 0)
+    r = river.feed_to_river_update(f, 0)
     assert len(f.entries) > 0
     assert len(r['item']) == len(f.entries)
