@@ -138,10 +138,9 @@ def update_feed(feed):
         logger.warning('Error updating feed {url}: {e}'.format(url=feed.url,e=e))
         db.session.rollback()
 
-
 #######################################
 
-def update_feeds(args):
+def update_feeds_cmd(args):
     """Update all of the subscribed feeds."""
     start_time = perf_counter()
     if args.all:
@@ -167,7 +166,7 @@ def update_feeds(args):
         )
     )
 
-def reset_feeds(args):
+def reset_feeds_cmd(args):
     """Reset cached state of all of the subscribed feeds."""
     if args.all:
         feeds = db.load_all_feeds()
@@ -183,7 +182,7 @@ def reset_feeds(args):
         feed.reset()
     db.session.commit()
 
-def list_feeds(args):
+def list_feeds_cmd(args):
     feeds = db.load_all_feeds()
     for feed in feeds:
         print('{feed}'.format(
@@ -193,7 +192,7 @@ def list_feeds(args):
         count=len(feeds),
     ))
 
-def add_feed(args):
+def add_feed_cmd(args):
     db.add_feed(args.url)
     db.session.commit()
 
@@ -205,24 +204,24 @@ if __name__=='__main__':
     sps = parser.add_subparsers(dest='cmd')
 
     cp = sps.add_parser('update', help='Update one or all feeds')
-    cp.set_defaults(func=update_feeds)
+    cp.set_defaults(func=update_feeds_cmd)
     cp.add_argument("--sync", help="Update the feeds asynchronously", action="store_true")
     g = cp.add_mutually_exclusive_group(required=True)
     g.add_argument("-a", "--all", help="Update all feeds", action="store_true")
     g.add_argument("-u", "--url", help="Update the specified URL")
 
     cp = sps.add_parser('reset', help='Reset one or all feeds')
-    cp.set_defaults(func=reset_feeds)
+    cp.set_defaults(func=reset_feeds_cmd)
     g = cp.add_mutually_exclusive_group(required=True)
     g.add_argument("-a", "--all", help="Reset all feeds", action="store_true")
     g.add_argument("-u", "--url", help="Reset a single URL")
 
     cp = sps.add_parser('add', help='Add a feed to the DB')
-    cp.set_defaults(func=add_feed)
+    cp.set_defaults(func=add_feed_cmd)
     cp.add_argument('url', help="The URL to add to the DB")
 
     cp = sps.add_parser('list', help='List all feeds in the DB', aliases=["ls"])
-    cp.set_defaults(func=list_feeds)
+    cp.set_defaults(func=list_feeds_cmd)
 
     args = parser.parse_args()
     if args.cmd:

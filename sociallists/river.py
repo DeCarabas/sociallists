@@ -150,8 +150,6 @@ def aggregate_river(user, name):
         feed_updates = [ db.load_river_update(u) for u in updates ]
     return wrap_feed_updates(feed_updates)
 
-#######################################
-
 def add_river_and_feed(user, river_name, url):
     feed = db.load_feed_by_url(url)
     if not feed:
@@ -182,11 +180,13 @@ def add_river_and_feed(user, river_name, url):
         ))
         river.feeds.append(feed)
 
-def add_feed(args):
+#######################################
+
+def add_feed_cmd(args):
     add_river_and_feed(args.user, args.river, args.url)
     db.session.commit()
 
-def list_rivers(args):
+def list_rivers_cmd(args):
     rivers = db.load_rivers_by_user(args.user)
     for r in rivers:
         print('{name}'.format(
@@ -196,7 +196,7 @@ def list_rivers(args):
         count=len(rivers),
     ))
 
-def show_river(args):
+def show_river_cmd(args):
     river = db.load_river_by_name(args.user, args.name)
     for feed in river.feeds:
         print(str(feed))
@@ -204,7 +204,7 @@ def show_river(args):
         count=len(river.feeds),
     ))
 
-def import_opml(args):
+def import_opml_cmd(args):
     import listparser
     l = listparser.parse(args.file)
     for item in l.feeds:
@@ -229,19 +229,19 @@ if __name__=='__main__':
     sps = parser.add_subparsers(dest='cmd')
 
     cp = sps.add_parser('add', help="Add a feed to a user's river")
-    cp.set_defaults(func=add_feed)
+    cp.set_defaults(func=add_feed_cmd)
     cp.add_argument('river', help="The name of the river to augment")
     cp.add_argument('url', help="The URL to add to the DB")
 
     cp = sps.add_parser('import', help="Import an OPML file for a user")
-    cp.set_defaults(func=import_opml)
+    cp.set_defaults(func=import_opml_cmd)
     cp.add_argument('file', help="The file to import")
 
     cp = sps.add_parser('list', help="List all the user's rivers", aliases=["ls"])
-    cp.set_defaults(func=list_rivers)
+    cp.set_defaults(func=list_rivers_cmd)
 
     cp = sps.add_parser('show', help="Show the feeds in a particular river")
-    cp.set_defaults(func=show_river)
+    cp.set_defaults(func=show_river_cmd)
     cp.add_argument('name', help="The river name to show", default=None)
 
     args = parser.parse_args()
