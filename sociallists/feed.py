@@ -47,6 +47,24 @@ def get_entry_id(entry):
         ).encode('utf-8')).hexdigest()
     return id
 
+def do_rename_feed(feed, new_url):
+    """Set the url of the given feed, unless the new URL is already in the DB.
+
+    Returns True if the URL was set, or False if the rivers were changed to
+    refer to an existing feed."""
+    existing_feed = db.load_feed_by_url(new_url)
+    if not existing_feed:
+        feed.url = new_url
+        return True
+
+    # Renaming to existing feed. Need to renumber things appropriately.
+    rivers = db.load_rivers_by_feed(feed)
+    for river in rivers:
+        river.feeds.remove(feed)
+        if not existing_feed in river.feeds:
+            river.feeds.append(existing_feed)
+    return False
+
 def do_update_feed(feed):
     update_time = datetime.utcnow()
     logger.info('Updating feed {url} ({etag}/{modified}) @ {now}'.format(
@@ -75,8 +93,11 @@ def do_update_feed(feed):
     response_history = response.history + [ response ]
     for h in response_history:
         if not h.is_permanent_redirect:
-            feed.url = h.url
-            break
+            if feed.url != h.url:
+                if not do_rename_feed(feed, h.url):
+                    logger.info("Marking '%s' as dead after rename" % feed.url)
+                    feed.last_status = 410
+                    return
 
     f = feedparser.parse(RequestsFeedparserShim(response))
     logger.info('Feed {url} has {count} entries'.format(
@@ -115,6 +136,7 @@ def update_feed(feed):
     except:
         e = sys.exc_info()
         logger.warning('Error updating feed {url}: {e}'.format(url=feed.url,e=e))
+        db.session.rollback()
 
 
 #######################################

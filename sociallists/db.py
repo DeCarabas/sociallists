@@ -140,6 +140,13 @@ def load_river_by_name(user, river_name):
         .one_or_none()
     )
 
+def load_rivers_by_feed(feed):
+    return (
+        session.query(RiverData)
+        .filter(RiverData.feeds.contains(feed))
+        .all()
+    )
+
 def create_river(user, river_name):
     data = RiverData(user_id=user, name=river_name)
     session.add(data)
