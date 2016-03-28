@@ -9,7 +9,7 @@ from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.types import DateTime, Integer, Unicode, UnicodeText, BigInteger
 
 engine = create_engine(os.environ.get('DB_CONNECTION_STRING', "postgresql:///sociallists"))
-session = scoped_session(sessionmaker(bind=engine, autoflush=False))
+global_session = scoped_session(sessionmaker(bind=engine, autoflush=False))
 
 Base = declarative_base(bind=engine)
 
@@ -95,33 +95,33 @@ class FeedData(Base):
         self.next_item_id = 0
 
 
-def add_feed(url):
+def add_feed(session, url):
     feed = FeedData(url=url, last_status=0, next_item_id=0, history='')
     session.add(feed)
     return feed
 
-def load_all_feeds():
+def load_all_feeds(session):
     """Load all of the FeedData from the DB"""
     return session.query(FeedData).all()
 
-def load_feed_by_url(url):
+def load_feed_by_url(session, url):
     """Load a single feed by URL"""
     return session.query(FeedData).filter(FeedData.url == url).first()
 
-def load_history_set(feed):
+def load_history_set(session, feed):
     history = []
     if len(feed.history) > 0:
         history = json.loads(feed.history)
     return set(history)
 
-def store_history(feed, history):
+def store_history(session, feed, history):
     feed.history = json.dumps(list(history))
 
-def load_river_update(update):
+def load_river_update(session, update):
     """Decode the river update structure in the update object"""
     return json.loads(update.data)
 
-def store_river(feed, update_time, river):
+def store_river(session, feed, update_time, river):
     """Store a river structure for the given FeedData"""
     data = RiverUpdateData(
         feed_id = feed.id,
@@ -131,7 +131,7 @@ def store_river(feed, update_time, river):
     session.add(data)
     return data
 
-def load_river_by_name(user, river_name):
+def load_river_by_name(session, user, river_name):
     """Load a RiverData object by user ID and name"""
     return (
         session.query(RiverData)
@@ -140,19 +140,19 @@ def load_river_by_name(user, river_name):
         .one_or_none()
     )
 
-def load_rivers_by_feed(feed):
+def load_rivers_by_feed(session, feed):
     return (
         session.query(RiverData)
         .filter(RiverData.feeds.contains(feed))
         .all()
     )
 
-def create_river(user, river_name):
+def create_river(session, user, river_name):
     data = RiverData(user_id=user, name=river_name)
     session.add(data)
     return data
 
-def load_rivers_by_user(user):
+def load_rivers_by_user(session, user):
     """Load all the RiverData objects for a given user id."""
     return (
         session.query(RiverData).filter(RiverData.user_id == user).all()

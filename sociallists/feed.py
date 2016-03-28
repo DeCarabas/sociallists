@@ -52,13 +52,13 @@ def do_rename_feed(feed, new_url):
 
     Returns True if the URL was set, or False if the rivers were changed to
     refer to an existing feed."""
-    existing_feed = db.load_feed_by_url(new_url)
+    existing_feed = db.load_feed_by_url(db.global_session, new_url)
     if not existing_feed:
         feed.url = new_url
         return True
 
     # Renaming to existing feed. Need to renumber things appropriately.
-    rivers = db.load_rivers_by_feed(feed)
+    rivers = db.load_rivers_by_feed(db.global_session, feed)
     for river in rivers:
         river.feeds.remove(feed)
         if not existing_feed in river.feeds:
@@ -106,7 +106,7 @@ def do_update_feed(feed):
     ))
 
     entries_with_ids = [ (get_entry_id(entry), entry) for entry in f.entries ]
-    history = db.load_history_set(feed)
+    history = db.load_history_set(db.global_session, feed)
     new_entries = [
         e_id[1] for e_id in entries_with_ids if e_id[0] not in history
     ]
@@ -120,8 +120,8 @@ def do_update_feed(feed):
     if len(f.entries) > 0:
         r_new = river.feed_to_river_update(f, feed.next_item_id, update_time, session)
         feed.next_item_id += len(f.entries)
-        db.store_river(feed, update_time, r_new)
-        db.store_history(feed, [ e_id[0] for e_id in entries_with_ids ])
+        db.store_river(db.global_session, feed, update_time, r_new)
+        db.store_history(db.global_session, feed, [ e_id[0] for e_id in entries_with_ids ])
 
     feed.etag_header = f.get('etag', None)
     feed.modified_header = f.get('modified', None)
@@ -130,13 +130,13 @@ def do_update_feed(feed):
 def update_feed(feed):
     try:
         do_update_feed(feed)
-        db.session.commit()
+        db.global_session.commit()
 
         logger.info('Successfully updated feed {url}'.format(url=feed.url))
     except:
         e = sys.exc_info()
         logger.warning('Error updating feed {url}: {e}'.format(url=feed.url,e=e))
-        db.session.rollback()
+        db.global_session.rollback()
 
 #######################################
 
@@ -144,9 +144,9 @@ def update_feeds_cmd(args):
     """Update all of the subscribed feeds."""
     start_time = perf_counter()
     if args.all:
-        feeds = db.load_all_feeds()
+        feeds = db.load_all_feeds(db.global_session)
     else:
-        feeds = [ db.load_feed_by_url(args.url) ]
+        feeds = [ db.load_feed_by_url(db.global_session, args.url) ]
 
     if not args.sync:
         monkey.patch_all()
@@ -169,9 +169,9 @@ def update_feeds_cmd(args):
 def reset_feeds_cmd(args):
     """Reset cached state of all of the subscribed feeds."""
     if args.all:
-        feeds = db.load_all_feeds()
+        feeds = db.load_all_feeds(db.global_session)
     else:
-        feeds = [ db.load_feed_by_url(args.url) ]
+        feeds = [ db.load_feed_by_url(db.global_session, args.url) ]
 
     for feed in feeds:
         print('Resetting feed {url} ({etag}/{modified})'.format(
@@ -180,10 +180,10 @@ def reset_feeds_cmd(args):
             modified=feed.modified_header,
         ))
         feed.reset()
-    db.session.commit()
+    db.global_session.commit()
 
 def list_feeds_cmd(args):
-    feeds = db.load_all_feeds()
+    feeds = db.load_all_feeds(db.global_session)
     for feed in feeds:
         print('{feed}'.format(
             feed=str(feed),
@@ -193,8 +193,8 @@ def list_feeds_cmd(args):
     ))
 
 def add_feed_cmd(args):
-    db.add_feed(args.url)
-    db.session.commit()
+    db.add_feed(db.global_session, args.url)
+    db.global_session.commit()
 
 if __name__=='__main__':
     import argparse

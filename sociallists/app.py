@@ -14,7 +14,7 @@ def index():
 
 @app.route("/api/v1/river/<user>")
 def get_river_list(user):
-    rivers = db.load_rivers_by_user(user)
+    rivers = db.load_rivers_by_user(db.global_session, user)
     result = json.dumps({
         'rivers': [
             {
@@ -41,4 +41,4 @@ def get_public_river(user,id):
 
 @app.teardown_request
 def shutdown_session(exception=None):
-    db.session.remove()
+    db.global_session.remove()

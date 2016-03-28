@@ -140,31 +140,31 @@ def feed_to_river(feed, start_id):
 
 def aggregate_river(user, name):
     """Aggregate a set of feed updates for a given river."""
-    db_river = db.load_river_by_name(user,name)
+    db_river = db.load_river_by_name(db.global_session, user, name)
     feed_updates = []
     if db_river:
         updates = [
             update for feed in db_river.feeds for update in feed.updates
         ]
         updates.sort(reverse=True, key=lambda u: u.update_time)
-        feed_updates = [ db.load_river_update(u) for u in updates ]
+        feed_updates = [ db.load_river_update(db.global_session, u) for u in updates ]
     return wrap_feed_updates(feed_updates)
 
 def add_river_and_feed(user, river_name, url):
-    feed = db.load_feed_by_url(url)
+    feed = db.load_feed_by_url(db.global_session, url)
     if not feed:
         print("Feed '{url}' not found in database. Adding...".format(
             url=url,
         ))
-        feed = db.add_feed(url)
+        feed = db.add_feed(db.global_session, url)
 
-    river = db.load_river_by_name(user, river_name)
+    river = db.load_river_by_name(db.global_session, user, river_name)
     if not river:
         print('River {user}/{river} not found, creating...'.format(
             user=user,
             river=river_name,
         ))
-        river = db.create_river(user, river_name)
+        river = db.create_river(db.global_session, user, river_name)
 
     if feed in river.feeds:
         print("Feed '{url}' already in river '{user}/{river}'...".format(
@@ -184,10 +184,10 @@ def add_river_and_feed(user, river_name, url):
 
 def add_feed_cmd(args):
     add_river_and_feed(args.user, args.river, args.url)
-    db.session.commit()
+    db.global_session.commit()
 
 def list_rivers_cmd(args):
-    rivers = db.load_rivers_by_user(args.user)
+    rivers = db.load_rivers_by_user(db.global_session, args.user)
     for r in rivers:
         print('{name}'.format(
             name=r.name,
@@ -197,7 +197,7 @@ def list_rivers_cmd(args):
     ))
 
 def show_river_cmd(args):
-    river = db.load_river_by_name(args.user, args.name)
+    river = db.load_river_by_name(db.global_session, args.user, args.name)
     for feed in river.feeds:
         print(str(feed))
     print('{count} feeds(s)'.format(
@@ -217,7 +217,7 @@ def import_opml_cmd(args):
                 river_name,
             ))
             add_river_and_feed(args.user, river_name, item.url)
-            db.session.commit()
+            db.global_session.commit()
 
 if __name__=='__main__':
     import argparse
