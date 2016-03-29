@@ -1,5 +1,5 @@
 @echo off
-pushd ..
+pushd %~dp0\..
 
 SET DB_CONNECTION_STRING=postgresql:///sociallists
 
