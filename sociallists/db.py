@@ -1,6 +1,7 @@
 import json
 import os
 
+from contextlib import contextmanager
 from datetime import datetime
 from sqlalchemy import create_engine, Table, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,7 +10,8 @@ from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.types import DateTime, Integer, Unicode, UnicodeText, BigInteger
 
 engine = create_engine(os.environ.get('DB_CONNECTION_STRING', "postgresql:///sociallists"))
-global_session = scoped_session(sessionmaker(bind=engine, autoflush=False))
+session_maker = sessionmaker(bind=engine, autoflush=False)
+global_session = scoped_session(session_maker)
 
 Base = declarative_base(bind=engine)
 
@@ -94,6 +96,14 @@ class FeedData(Base):
         self.updates = []
         self.next_item_id = 0
 
+
+@contextmanager
+def session():
+    session = session_maker()
+    try:
+        yield session
+    finally:
+        session.close()
 
 def add_feed(session, url):
     feed = FeedData(url=url, last_status=0, next_item_id=0, history='')

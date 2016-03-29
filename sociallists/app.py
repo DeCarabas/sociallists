@@ -14,16 +14,17 @@ def index():
 
 @app.route("/api/v1/river/<user>")
 def get_river_list(user):
-    rivers = db.load_rivers_by_user(db.global_session, user)
-    result = json.dumps({
-        'rivers': [
-            {
-                'name':r.name,
-                'url':url_for('get_river', user=user, id=r.name),
-            }
-            for r in rivers
-        ]
-    }, indent=2, sort_keys=True)
+    with db.session() as session:
+        rivers = db.load_rivers_by_user(session, user)
+        result = json.dumps({
+            'rivers': [
+                {
+                    'name':r.name,
+                    'url':url_for('get_river', user=user, id=r.name),
+                }
+                for r in rivers
+            ]
+        }, indent=2, sort_keys=True)
 
     return (result, 200, {'content-type': 'application/javascript'})
 
