@@ -1,8 +1,7 @@
 import logging
-import requests
 import time
 
-from sociallists import db
+from sociallists import db, http
 
 from datetime import datetime
 from email import utils
@@ -16,7 +15,7 @@ def is_guid_link(guid, session=None):
     if not guid:
         return False
     if session is None:
-        session = requests.Session()
+        session = http.session()
     try:
         resp = session.head(guid, timeout=30)
         resp.raise_for_status()

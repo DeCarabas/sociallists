@@ -1,39 +1,14 @@
 import feedparser
 import logging
-import requests
-import sys
+import traceback
 
 from datetime import datetime
 from gevent import monkey,spawn,wait
 from hashlib import sha1
-from sociallists import db, river
+from sociallists import db, river, http
 from time import perf_counter
 
 logger = logging.getLogger('sociallists.feed')
-
-s = requests.Session()
-a = requests.adapters.HTTPAdapter(max_retries=3)
-s.mount('http://', a)
-s.mount('https://', a)
-
-session = s
-
-class RequestsFeedparserShim(object):
-    """Map a requests Response object to one feedparser can use directly."""
-    def __init__(self, response):
-        self.response = response
-
-        self.headers = response.headers
-        self.url = response.url
-        self.status = response.status_code
-        self.code = response.status_code
-
-    def read(self):
-        return self.response.content
-
-    def close(self):
-        self.response.close()
-
 
 def get_entry_id(entry):
     id = entry.get('id', None)
@@ -83,7 +58,8 @@ def do_update_feed(db_session, feed):
         'If-None-Match': feed.etag_header,
     }
 
-    response = session.get(feed.url, headers=headers, timeout=(10.05,30))
+    http_session = http.session()
+    response = http_session.get(feed.url, headers=headers, timeout=(10.05,30))
     logger.info('Feed %s => %s, %d' % (feed.url, response.url, response.status_code))
 
     # The .url properties of the history responses are the URLs *before* the redirect
@@ -99,7 +75,7 @@ def do_update_feed(db_session, feed):
                     feed.last_status = 410
                     return
 
-    f = feedparser.parse(RequestsFeedparserShim(response))
+    f = feedparser.parse(http.FeedparserShim(response))
     logger.info('Feed {url} has {count} entries'.format(
         url=feed.url,
         count=len(f.entries),
@@ -118,7 +94,7 @@ def do_update_feed(db_session, feed):
     ))
 
     if len(f.entries) > 0:
-        r_new = river.feed_to_river_update(f, feed.next_item_id, update_time, session)
+        r_new = river.feed_to_river_update(f, feed.next_item_id, update_time, http_session)
         feed.next_item_id += len(f.entries)
         db.store_river(db_session, feed, update_time, r_new)
         db.store_history(db_session, feed, [ e_id[0] for e_id in entries_with_ids ])
@@ -135,8 +111,11 @@ def update_feed(feed):
 
             logger.info('Successfully updated feed {url}'.format(url=feed.url))
         except:
-            e = sys.exc_info()
-            logger.warning('Error updating feed {url}: {e}'.format(url=feed.url,e=e))
+            e = traceback.format_exc()
+            logger.warning('Error updating feed {url}: {e}'.format(
+                url=feed.url,
+                e=e,
+            ))
             db_session.rollback()
 
 #######################################
