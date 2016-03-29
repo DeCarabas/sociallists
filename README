@@ -9,7 +9,6 @@
 
 # TODO:
 
-- Investigate other async HTTP request APIs
 - On the add feed flow add autodiscovery and redirect chasing before adding
   to the DB
 - Use BeautifulSoup to extract thumbnails
