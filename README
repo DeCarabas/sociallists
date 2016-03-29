@@ -1,7 +1,19 @@
-Setting up the database
+# Setting up the database
+
 - Install postgres
 - Create a database named 'sociallists'
 - In python, do:
 
   >>> from sociallists import db
   >>> db.Base.metadata.create_all()
+
+# TODO:
+
+- Use finer-grained DB sessions for better error handling
+- On the add feed flow add autodiscovery and redirect chasing before adding
+  to the DB
+- Use BeautifulSoup to extract thumbnails
+- Extract enclosures and the like
+- Re-visit use of requirements and packages and vendoring and the like
+- Put river items in the DB so that we can efficiently re-run the processing
+  steps for items that are out of the feed
