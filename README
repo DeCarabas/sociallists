@@ -17,3 +17,6 @@
 - Re-visit use of requirements and packages and vendoring and the like
 - Put river items in the DB so that we can efficiently re-run the processing
   steps for items that are out of the feed
+- For the future, we'll probably need options on individual feeds for
+  processing to make them better. It is possible to over-engineer this so be
+  careful.
