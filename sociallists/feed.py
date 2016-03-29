@@ -2,8 +2,8 @@ import feedparser
 import logging
 import traceback
 
+from concurrent import futures
 from datetime import datetime
-from gevent import monkey,spawn,wait
 from hashlib import sha1
 from sociallists import db, river, http
 from time import perf_counter
@@ -130,9 +130,9 @@ def update_feeds_cmd(args):
             feeds = [ db.load_feed_by_url(db_session, args.url) ]
 
     if not args.sync:
-        monkey.patch_all()
-        threads = [spawn(update_feed, feed) for feed in feeds]
-        wait(threads)
+        with futures.ThreadPoolExecutor() as executor:
+            threads = [ executor.submit(update_feed, feed) for feed in feeds ]
+            futures.wait(threads)
     else:
         for feed in feeds:
             update_feed(feed)
