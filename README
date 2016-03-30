@@ -9,6 +9,7 @@
 
 # TODO:
 
+- Figure out why it looks like some updates don't take. :(
 - On the add feed flow add autodiscovery and redirect chasing before adding
   to the DB
 - Use BeautifulSoup to extract thumbnails
