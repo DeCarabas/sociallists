@@ -5,7 +5,7 @@ import traceback
 from concurrent import futures
 from datetime import datetime
 from hashlib import sha1
-from sociallists import db, river, http
+from sociallists import db, river, http_util
 from time import perf_counter
 
 logger = logging.getLogger('sociallists.feed')
@@ -58,7 +58,7 @@ def do_update_feed(db_session, feed):
         'If-None-Match': feed.etag_header,
     }
 
-    http_session = http.session()
+    http_session = http_util.session()
     response = http_session.get(feed.url, headers=headers, timeout=(10.05,30))
     logger.info('Feed %s => %s, %d' % (feed.url, response.url, response.status_code))
 
@@ -75,7 +75,7 @@ def do_update_feed(db_session, feed):
                     feed.last_status = 410
                     return
 
-    f = feedparser.parse(http.FeedparserShim(response))
+    f = feedparser.parse(http_util.FeedparserShim(response))
     logger.info('Feed {url} has {count} entries'.format(
         url=feed.url,
         count=len(f.entries),
