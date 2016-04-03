@@ -82,7 +82,15 @@ def do_update_feed(db_session, feed):
     ))
 
     entries_with_ids = [ (get_entry_id(entry), entry) for entry in f.entries ]
+
     history = db.load_history_set(db_session, feed)
+    logger.info('Feed {url} old history:'.format(url=feed.url))
+    for h in sorted(history):
+        logger.info('Feed {url} : {id}'.format(
+            url=feed.url,
+            id=h,
+        ))
+
     new_entries = [
         e_id[1] for e_id in entries_with_ids if e_id[0] not in history
     ]
@@ -97,11 +105,21 @@ def do_update_feed(db_session, feed):
         r_new = river.feed_to_river_update(f, feed.next_item_id, update_time, http_session)
         feed.next_item_id += len(f.entries)
         db.store_river(db_session, feed, update_time, r_new)
+        new_history = [ e_id[0] for e_id in entries_with_ids ]
+
+        logger.info('Feed {url} new history:'.format(url=feed.url))
+        for h in sorted(new_history):
+            logger.info('Feed {url} : {id}'.format(
+                url=feed.url,
+                id=h,
+            ))
+
         db.store_history(db_session, feed, [ e_id[0] for e_id in entries_with_ids ])
 
     feed.etag_header = f.get('etag', None)
     feed.modified_header = f.get('modified', None)
     feed.last_status = response.status_code
+    db_session.add(feed)
 
 def update_feed(feed):
     with db.session() as db_session:

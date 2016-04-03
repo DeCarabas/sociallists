@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from contextlib import contextmanager
@@ -8,6 +9,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship
 from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.types import DateTime, Integer, Unicode, UnicodeText, BigInteger
+
+logger = logging.getLogger('sociallists.db')
 
 engine = create_engine(os.environ.get('DB_CONNECTION_STRING', "postgresql:///sociallists"))
 session_maker = sessionmaker(bind=engine, autoflush=False)
@@ -122,6 +125,7 @@ def load_history_set(session, feed):
     history = []
     if len(feed.history) > 0:
         history = json.loads(feed.history)
+
     return set(history)
 
 def store_history(session, feed, history):
