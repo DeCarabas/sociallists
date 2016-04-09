@@ -234,7 +234,6 @@ if __name__=='__main__':
 
     parser = argparse.ArgumentParser(description="sociallists river related commands")
     parser.add_argument("-u", "--user", help="The user whose list we're modifying", required=True)
-    parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
 
     sps = parser.add_subparsers(dest='cmd')
 
@@ -256,10 +255,7 @@ if __name__=='__main__':
 
     args = parser.parse_args()
     if args.cmd:
-        level = logging.WARNING
-        if args.verbose:
-            level = logging.INFO
-
+        level = logging.INFO
         logging.basicConfig(
             format='%(asctime)s %(message)s',
             level=level,

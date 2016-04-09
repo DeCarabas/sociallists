@@ -203,7 +203,6 @@ if __name__=='__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description="sociallists feed related commands")
-    parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
     sps = parser.add_subparsers(dest='cmd')
 
     cp = sps.add_parser('update', help='Update one or all feeds')
@@ -228,10 +227,7 @@ if __name__=='__main__':
 
     args = parser.parse_args()
     if args.cmd:
-        level = logging.WARNING
-        if args.verbose:
-            level = logging.INFO
-
+        level = logging.INFO
         logging.basicConfig(
             format='%(asctime)s %(message)s',
             level=level,
