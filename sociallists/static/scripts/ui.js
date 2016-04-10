@@ -42,7 +42,7 @@ export class RiverFeedUpdate extends React.Component {
   }
 }
 
-export class River extends React.Component {
+export class RiverColumn extends React.Component {
   render() {
     let style = {
       borderWidth: 1,
