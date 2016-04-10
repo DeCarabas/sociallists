@@ -1,6 +1,8 @@
 var React = require('react');
 var ReactDOM = require('react-dom');
+import { connect, Provider } from 'react-redux'
 import { createStore } from 'redux'
+
 import { data } from './data'
 import { RiverColumn } from './ui'
 
@@ -30,9 +32,24 @@ function sociallistsApp(state = {}, action) {
 }
 
 // Store
-let store = createStore(sociallistsApp);
+let store = createStore(sociallistsApp, { river: data });
+
+// ... react hookup ? ...
+const mapStateToProps = (state) => {
+  return {
+    river: state.river,
+  };
+};
+const mapDispatchToProps = (dispatch) => {
+  return { };
+};
+const VisibleRiverColumn = connect(mapStateToProps, mapDispatchToProps)(
+  RiverColumn
+);
 
 ReactDOM.render(
-  <RiverColumn river={ data } />,
+  <Provider store={store}>
+    <VisibleRiverColumn />
+  </Provider>,
   document.getElementById('example')
 );
