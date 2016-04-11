@@ -37,7 +37,7 @@ export const RiverFeedUpdate = ({update}) => {
   );
 };
 
-export const RiverColumn = ({river}) => {
+export const RiverColumn = ({updates}) => {
   let style = {
     borderWidth: 1,
     borderStyle: "solid",
@@ -45,7 +45,6 @@ export const RiverColumn = ({river}) => {
     width: 400,
   };
 
-  let updates = river.updatedFeeds.updatedFeed;
   return (
     <div style={style}>
       {
