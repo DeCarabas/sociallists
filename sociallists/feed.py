@@ -70,7 +70,7 @@ def do_update_feed(db_session, feed):
     for h in response_history:
         if not h.is_permanent_redirect:
             if feed.url != h.url:
-                if not do_rename_feed(feed, h.url):
+                if not do_rename_feed(db_session, feed, h.url):
                     logger.info("Marking '%s' as dead after rename" % feed.url)
                     feed.last_status = 410
                     return
