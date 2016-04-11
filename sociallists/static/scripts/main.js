@@ -17,11 +17,11 @@ function riverUpdateStart(id) {
 }
 
 const RIVER_UPDATE_SUCCESS = 'RIVER_UPDATE_SUCCESS';
-function riverUpdateSuccess(id, river) {
+function riverUpdateSuccess(id, response) {
   return {
     type: RIVER_UPDATE_SUCCESS,
     id: id,
-    river: river,
+    response: response,
   };
 }
 const RIVER_UPDATE_FAILED = 'RIVER_UPDATE_FAILED';
@@ -35,10 +35,34 @@ function riverUpdateFailed(id, error) {
 
 // The redux reducer-- this is the core logic of the app that evolves the app
 // state in response to actions.
-function state_river(state = {}, action) {
+//
+// State in the app looks like this:
+//
+//  {
+//    rivers: {              // state_rivers
+//      'Main': [            // state_river
+//         // A bunch of feed update objects
+//      ],
+//    },
+//  }
+//
+function state_river(state = [], action) {
   switch(action.type) {
     case RIVER_UPDATE_SUCCESS:
-      return action.river;
+      return action.response.updatedFeeds.updatedFeed;
+    default:
+      return state;
+  }
+}
+
+function state_rivers(state = {}, action) {
+  switch(action.type) {
+    case RIVER_UPDATE_SUCCESS:
+      // NOTE: this instead of Object.assign({}, state, {...}) weirdness because
+      //       that latter one was just a little bit too precious for me.
+      let new_state = Object.assign({}, state);
+      new_state[action.id] = state_river(state[action.id], action);
+      return new_state;
     default:
       return state;
   }
@@ -46,20 +70,24 @@ function state_river(state = {}, action) {
 
 function sociallistsApp(state = {}, action) {
   return {
-    river: state_river(state.river, action),
+    rivers: state_rivers(state.rivers, action),
   };
 }
 
 // State store, where it all comes together.
 //
-let store = createStore(sociallistsApp, { river: data });
+let store = createStore(sociallistsApp, {
+  rivers: {
+    'Main': data.updatedFeeds.updatedFeed,
+  },
+});
 
 // Visible Column Setup, which maps redux stuff to react stuff. connect() makes
 // a react component.
 //
 const mapStateToProps = (state) => {
   return {
-    updates: state.river.updatedFeeds.updatedFeed,
+    updates: state.rivers['Main'],
   };
 };
 const mapDispatchToProps = (dispatch) => {
@@ -80,7 +108,7 @@ function doRefresh(dispatch, river_id = 'Main') {
     // TODO: Event for progress
   });
   xhr.addEventListener("load", (e) => {
-    console.log("Loaded", river_id);
+    console.log("Loaded the river", river_id);
     const river = JSON.parse(xhr.responseText);
     dispatch(riverUpdateSuccess(river_id, river));
   });
