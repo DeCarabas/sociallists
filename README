@@ -9,6 +9,13 @@
 
 # TODO:
 
+- On the add feed flow, do the following:
+  1. Automatically refresh feed for the first time if no refresh has been done
+  2. When doing first-feed-update, remove all but the top two or three items
+     from the first update, so that your feed is not destroyed by 20 or 30 items
+  (How does this work when feed updating is shared? Maybe the top-three thing
+  should be a general feature, and we should suppress more than three feeds
+  per update in the UI? (Maybe with a more... link))
 - On the add feed flow add autodiscovery and redirect chasing before adding
   to the DB
 - Use BeautifulSoup to extract thumbnails
