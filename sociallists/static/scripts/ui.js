@@ -18,11 +18,26 @@ export const RiverItem = ({item}) => {
   );
 };
 
+const RiverFeedUpdateTitle = ({update}) => {
+  const style = {
+    fontSize: 12,
+  };
+  return <div style={style}>
+    <div style={{float: 'right'}}>{update.whenLastUpdate}</div>
+    <a href={update.websiteUrl}>{update.feedTitle}</a>
+    <div style={{float: 'clear'}} />
+  </div>;
+};
+
 // RiverFeedUpdate
 //
 export const RiverFeedUpdate = ({update}) => {
-  let style = {
+  const style = {
     margin: 3,
+  };
+
+  const innerStyle = {
+    marginLeft: 10,
   };
 
   let udkeypart = update.feedUrl + '|' + update.whenLastUpdate;
@@ -32,34 +47,44 @@ export const RiverFeedUpdate = ({update}) => {
     : <p/>);
   return(
     <div style={style}>
-      <h3>{update.feedTitle}</h3>
-      {
-        items.map(i =>
-          <RiverItem
-            item={i}
-            key={ udkeypart + '|' + i.id }
-          />
-        )
-      }
-      { more_box }
+      <RiverFeedUpdateTitle update={update} />
+      <div style={innerStyle}>
+        {
+          items.map(i =>
+            <RiverItem
+              item={i}
+              key={ udkeypart + '|' + i.id }
+            />
+          )
+        }
+        { more_box }
+      </div>
     </div>
   );
 };
 
+// RiverTitle
+//
+const RiverTitle = ({river}) => {
+  return <h1>{river.name}</h1>;
+};
+
 // RiverColumn
 //
-export const RiverColumn = ({rivers, index}) => {
+const RiverColumn = ({rivers, index}) => {
+  const COLUMNWIDTH = 400;
+
   let style = {
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "black",
-    width: 400,
+    width: COLUMNWIDTH,
+    float: "left",
+    //marginLeft: index * (COLUMNWIDTH + 20),
   };
 
   let river = rivers[index] || {};
   let updates = river.updates || [];
   return (
     <div style={style}>
+      <RiverTitle river={river} />
       {
         updates.map(u =>
           <RiverFeedUpdate
@@ -92,8 +117,11 @@ export const VisibleRiverColumn = connect(
 // RiverSet
 //
 export const RiverSet = ({rivers}) => {
+  const style = {
+    position: 'relative',
+  };
   return (
-    <div>
+    <div style={style}>
     {
       rivers.map((r, index) =>
         <VisibleRiverColumn key={r.name} index={index} />
