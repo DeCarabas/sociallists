@@ -21,7 +21,10 @@ export const RiverFeedUpdate = ({update}) => {
   };
 
   let udkeypart = update.feedUrl + '|' + update.whenLastUpdate;
-  let items = update.item;
+  let items = update.item.slice(0, 3);
+  let more_box = (update.item.length > 3
+    ? <p>More...</p>
+    : <p/>);
   return(
     <div style={style}>
       <h3>{update.feedTitle}</h3>
@@ -33,6 +36,7 @@ export const RiverFeedUpdate = ({update}) => {
           />
         )
       }
+      { more_box }
     </div>
   );
 };
