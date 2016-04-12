@@ -1,6 +1,8 @@
 var React = require('react'); // N.B. Still need this because JSX.
 import { connect } from 'react-redux'
 
+// RiverItem
+//
 export const RiverItem = ({item}) => {
   let style = {
     border: "1px solid AAA",
@@ -16,6 +18,8 @@ export const RiverItem = ({item}) => {
   );
 };
 
+// RiverFeedUpdate
+//
 export const RiverFeedUpdate = ({update}) => {
   let style = {
     margin: 3,
@@ -42,7 +46,9 @@ export const RiverFeedUpdate = ({update}) => {
   );
 };
 
-export const RiverColumn = ({rivers, riverId}) => {
+// RiverColumn
+//
+export const RiverColumn = ({rivers, index}) => {
   let style = {
     borderWidth: 1,
     borderStyle: "solid",
@@ -50,7 +56,8 @@ export const RiverColumn = ({rivers, riverId}) => {
     width: 400,
   };
 
-  let updates = rivers[riverId] || [];
+  let river = rivers[index] || {};
+  let updates = river.updates || [];
   return (
     <div style={style}>
       {
@@ -65,8 +72,7 @@ export const RiverColumn = ({rivers, riverId}) => {
   );
 };
 
-// Visible Column Setup, which maps redux stuff to react stuff. connect() makes
-// a react component.
+// VisibleRiverColumn
 //
 const vrc_mapStateToProps = (state) => {
   return {
@@ -83,18 +89,22 @@ export const VisibleRiverColumn = connect(
   RiverColumn
 );
 
+// RiverSet
+//
 export const RiverSet = ({rivers}) => {
   return (
     <div>
     {
-      Object.keys(rivers).map(k =>
-        <VisibleRiverColumn key={k} riverId={k} />
+      rivers.map((r, index) =>
+        <VisibleRiverColumn key={r.name} index={index} />
       )
     }
     </div>
   );
 };
 
+// VisibleRiverSet
+//
 const vrs_mapStateToProps = (state) => {
   return {
     rivers: state.rivers,
