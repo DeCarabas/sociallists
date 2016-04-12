@@ -1,4 +1,5 @@
 var React = require('react'); // N.B. Still need this because JSX.
+import { connect } from 'react-redux'
 
 export const RiverItem = ({item}) => {
   let style = {
@@ -41,7 +42,7 @@ export const RiverFeedUpdate = ({update}) => {
   );
 };
 
-export const RiverColumn = ({updates}) => {
+export const RiverColumn = ({rivers, riverId}) => {
   let style = {
     borderWidth: 1,
     borderStyle: "solid",
@@ -49,6 +50,7 @@ export const RiverColumn = ({updates}) => {
     width: 400,
   };
 
+  let updates = rivers[riverId] || [];
   return (
     <div style={style}>
       {
@@ -62,3 +64,48 @@ export const RiverColumn = ({updates}) => {
     </div>
   );
 };
+
+// Visible Column Setup, which maps redux stuff to react stuff. connect() makes
+// a react component.
+//
+const vrc_mapStateToProps = (state) => {
+  return {
+    rivers: state.rivers,
+  };
+};
+const vrc_mapDispatchToProps = (dispatch) => {
+  return { };
+};
+export const VisibleRiverColumn = connect(
+  vrc_mapStateToProps,
+  vrc_mapDispatchToProps
+)(
+  RiverColumn
+);
+
+export const RiverSet = ({rivers}) => {
+  return (
+    <div>
+    {
+      Object.keys(rivers).map(k =>
+        <VisibleRiverColumn key={k} riverId={k} />
+      )
+    }
+    </div>
+  );
+};
+
+const vrs_mapStateToProps = (state) => {
+  return {
+    rivers: state.rivers,
+  }
+};
+const vrs_mapDispatchToProps = (dispatch) => {
+  return { };
+};
+export const VisibleRiverSet = connect(
+  vrs_mapStateToProps,
+  vrs_mapDispatchToProps
+)(
+  RiverSet
+);

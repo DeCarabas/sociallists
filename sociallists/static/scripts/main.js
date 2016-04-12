@@ -4,7 +4,7 @@ import { connect, Provider } from 'react-redux'
 import { createStore } from 'redux'
 
 import { data } from './data'
-import { RiverColumn } from './ui'
+import { VisibleRiverSet } from './ui'
 
 // Redux actions-- these are basically helper functions and records to carry
 // events into the reducer, below.
@@ -82,21 +82,6 @@ let store = createStore(sociallistsApp, {
   },
 });
 
-// Visible Column Setup, which maps redux stuff to react stuff. connect() makes
-// a react component.
-//
-const mapStateToProps = (state) => {
-  return {
-    updates: state.rivers['Main'],
-  };
-};
-const mapDispatchToProps = (dispatch) => {
-  return { };
-};
-const VisibleRiverColumn = connect(mapStateToProps, mapDispatchToProps)(
-  RiverColumn
-);
-
 // OK I don't know what I'm doing here.
 //
 function doRefresh(dispatch, river_id = 'Main') {
@@ -126,7 +111,7 @@ function doRefresh(dispatch, river_id = 'Main') {
 
 ReactDOM.render(
   <Provider store={store}>
-    <VisibleRiverColumn />
+    <VisibleRiverSet />
   </Provider>,
   document.getElementById('example')
 );
