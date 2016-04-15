@@ -2,10 +2,42 @@ var React = require('react'); // N.B. Still need this because JSX.
 import { connect } from 'react-redux'
 
 // http://paletton.com/#uid=12-0u0kleqtbzEKgVuIpcmGtdhZ
-const BASE_COLOR = '#7ABD3F';
+const COLOR_VERY_DARK = '#42800B';
+const COLOR_DARK = '#5EA222';
+const COLOR_BASE = '#7ABD3F';
+const COLOR_LIGHT = '#9EDB67';
+const COLOR_VERY_LIGHT = '#BFEC97';
+
+const COLOR_BLACK = '#222';
+const COLOR_DARK_GREY = '#444';
+
+const SANS_FONTS = [
+  'AvenirNext-Medium',
+  'HelveticaNeue-Medium',
+  'Helvetica Neue',
+  'Helvetica',
+  'Arial',
+  'sans-serif',
+];
 
 const COLUMNWIDTH = 400;
 const COLUMNSPACER = 10;
+
+const DEFAULT_LINK_STYLE = {
+  color: COLOR_BLACK,
+  textDecoration: 'initial',
+};
+
+export const RiverItemTitle = ({item}) => {
+  const style = Object.assign({}, DEFAULT_LINK_STYLE, {
+    fontSize: 18,
+  });
+  return (
+    <a style={style} href={ item.link }>
+      { item.title }
+    </a>
+  );
+}
 
 // RiverItem
 //
@@ -16,9 +48,7 @@ export const RiverItem = ({item}) => {
 
   return(
     <div style={style}>
-      <a href={ item.link }>
-        <h4>{ item.title }</h4>
-      </a>
+      <RiverItemTitle item={item} />
       <p>{ item.body }</p>
     </div>
   );
@@ -29,9 +59,12 @@ const RiverFeedUpdateTitle = ({update}) => {
     fontSize: 12,
   };
   return <div style={style}>
+    <hr />
     <div style={{float: 'right'}}>{update.whenLastUpdate}</div>
-    <a href={update.websiteUrl}>{update.feedTitle}</a>
-    <div style={{float: 'clear'}} />
+    <a style={DEFAULT_LINK_STYLE} href={update.websiteUrl}>
+      {update.feedTitle}
+    </a>
+    <div style={{float: 'clear', marginBottom: 10,}} />
   </div>;
 };
 
@@ -72,7 +105,10 @@ export const RiverFeedUpdate = ({update}) => {
 // RiverTitle
 //
 const RiverTitle = ({river}) => {
-  return <h1>{river.name}</h1>;
+  const style = {
+    backgroundColor: COLOR_BASE,
+  }
+  return <h1 style={style}>{river.name}</h1>;
 };
 
 // RiverColumn
@@ -83,7 +119,7 @@ const RiverColumn = ({rivers, index}) => {
     position: 'absolute',
     top: COLUMNSPACER,
     left: index * (COLUMNWIDTH + COLUMNSPACER) + COLUMNSPACER,
-    backgroundColor: 'white',
+    backgroundColor: '#FEFEF2',
   };
 
   let river = rivers[index] || {};
@@ -160,15 +196,19 @@ export const VisibleRiverSet = connect(
 );
 
 export const AppRoot = () => {
+  const appstyle = {
+    color: COLOR_DARK_GREY,
+    fontFamily: SANS_FONTS,
+  };
   const bgstyle = {
-    backgroundColor: BASE_COLOR,
+    backgroundColor: COLOR_VERY_LIGHT,
     position: 'fixed',
     top: 0,
     left: 0,
     width: '100%',
     height: '100%',
   };
-  return <div>
+  return <div style={appstyle} >
     <div style={bgstyle} />
     <VisibleRiverSet />
   </div>;
