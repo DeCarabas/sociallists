@@ -172,20 +172,23 @@ def apply_feed_update(db_session, feed, update):
 def do_update_feed(db_session, feed):
     if feed.last_status == 410:
         logger.info('Skipping feed %s because it is HTTP_GONE' % feed.url)
+        return None
     else:
         history = db.load_history_set(db_session, feed)
         update = get_feed_update(feed, history)
         apply_feed_update(db_session, feed, update)
         db_session.add(feed)
+        return update
 
 def update_feed(feed):
     """Update a single feed."""
     with db.session() as db_session:
         try:
-            do_update_feed(db_session, feed)
+            update = do_update_feed(db_session, feed)
             db_session.commit()
 
             logger.info('Successfully updated feed {url}'.format(url=feed.url))
+            return (feed, update, None)
         except:
             e = traceback.format_exc()
             logger.warning('Error updating feed {url}: {e}'.format(
@@ -193,8 +196,37 @@ def update_feed(feed):
                 e=e,
             ))
             db_session.rollback()
+            return (feed, None, e)
 
 #######################################
+
+def log_update_summary(feeds, elapsed_time, results):
+    logger.info(
+        'Updated {count} feeds in {time:.3} seconds ({fps:.2} feeds/sec)'.format(
+            count=len(feeds),
+            time=elapsed_time,
+            fps=len(feeds)/elapsed_time,
+        )
+    )
+
+    new_feeds = []
+    error_feeds = []
+
+    for feed, update, error in results:
+        if update is not None and len(update.feed.entries) > 0:
+            new_feeds.append('Feed {url} has {count} new entries'.format(
+                url=feed.url,
+                count=len(update.feed.entries),
+            ))
+        if error is not None:
+            error_feeds.append('Feed {url} had error: {error}'.format(
+                url=feed.url,
+                error=error
+            ))
+    for ef in error_feeds:
+        logger.info(ef)
+    for nf in new_feeds:
+        logger.info(nf)
 
 def update_feeds_cmd(args):
     """Update all of the subscribed feeds."""
@@ -208,20 +240,14 @@ def update_feeds_cmd(args):
     if not args.sync:
         with futures.ThreadPoolExecutor() as executor:
             threads = [ executor.submit(update_feed, feed) for feed in feeds ]
-            futures.wait(threads)
+            r = futures.wait(threads)
+            results = [ f.result() for f in r.done ]
     else:
-        for feed in feeds:
-            update_feed(feed)
+        results = [update_feed(feed) for feed in feeds]
 
     end_time = perf_counter()
     elapsed_time = end_time - start_time
-    logger.info(
-        'Updated {count} feeds in {time:.3} seconds ({fps:.2} feeds/sec)'.format(
-            count=len(feeds),
-            time=elapsed_time,
-            fps=len(feeds)/elapsed_time,
-        )
-    )
+    log_update_summary(feeds, elapsed_time, results)
 
 def reset_feeds_cmd(args):
     """Reset cached state of all of the subscribed feeds."""
