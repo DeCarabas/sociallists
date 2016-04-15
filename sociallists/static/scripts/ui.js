@@ -29,9 +29,14 @@ const SANS_FONTS = [
   'sans-serif',
 ];
 
+const RIVER_TITLE_FONT_SIZE = 24;
+const ITEM_TITLE_FONT_SIZE = 18;
+const TEXT_FONT_SIZE = 12;
+const UPDATE_TITLE_FONT_SIZE = 12;
+
 // ---- Sizes
 
-const COLUMNWIDTH = 400;
+const COLUMNWIDTH = 350;
 const COLUMNSPACER = 10;
 
 // ---- Default Styles
@@ -45,7 +50,7 @@ const DEFAULT_LINK_STYLE = {
 
 export const RiverItemTitle = ({item}) => {
   const style = Object.assign({}, DEFAULT_LINK_STYLE, {
-    fontSize: 18,
+    fontSize: ITEM_TITLE_FONT_SIZE,
   });
   return (
     <a style={style} href={ item.link }>
@@ -71,7 +76,7 @@ export const RiverItem = ({item}) => {
 
 const RiverFeedUpdateTitle = ({update}) => {
   const style = {
-    fontSize: 12,
+    fontSize: UPDATE_TITLE_FONT_SIZE,
   };
   return <div style={style}>
     <hr />
@@ -123,6 +128,7 @@ const RiverTitle = ({river}) => {
   const style = {
     paddingLeft: 10,
     backgroundColor: RIVER_TITLE_BACKGROUND_COLOR,
+    fontSize: RIVER_TITLE_FONT_SIZE,
   }
   return <h1 style={style}>{river.name}</h1>;
 };
@@ -215,6 +221,7 @@ export const AppRoot = () => {
   const appstyle = {
     color: APP_TEXT_COLOR,
     fontFamily: SANS_FONTS,
+    fontSize: TEXT_FONT_SIZE,
   };
   const bgstyle = {
     backgroundColor: APP_BACKGROUND_COLOR,
