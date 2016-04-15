@@ -5,7 +5,7 @@ import { createStore, applyMiddleware } from 'redux'
 import thunkMiddleware from 'redux-thunk'
 
 import { data } from './data'
-import { VisibleRiverSet } from './ui'
+import { AppRoot } from './ui'
 
 // Redux actions-- these are basically helper functions and records to carry
 // events into the reducer, below.
@@ -188,7 +188,7 @@ let store = createStore(
 
 ReactDOM.render(
   <Provider store={store}>
-    <VisibleRiverSet />
+    <AppRoot />
   </Provider>,
   document.getElementById('example')
 );

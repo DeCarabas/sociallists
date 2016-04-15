@@ -1,6 +1,12 @@
 var React = require('react'); // N.B. Still need this because JSX.
 import { connect } from 'react-redux'
 
+// http://paletton.com/#uid=12-0u0kleqtbzEKgVuIpcmGtdhZ
+const BASE_COLOR = '#7ABD3F';
+
+const COLUMNWIDTH = 400;
+const COLUMNSPACER = 10;
+
 // RiverItem
 //
 export const RiverItem = ({item}) => {
@@ -72,12 +78,12 @@ const RiverTitle = ({river}) => {
 // RiverColumn
 //
 const RiverColumn = ({rivers, index}) => {
-  const COLUMNWIDTH = 400;
-
   let style = {
     width: COLUMNWIDTH,
-    float: "left",
-    //marginLeft: index * (COLUMNWIDTH + 20),
+    position: 'absolute',
+    top: COLUMNSPACER,
+    left: index * (COLUMNWIDTH + COLUMNSPACER) + COLUMNSPACER,
+    backgroundColor: 'white',
   };
 
   let river = rivers[index] || {};
@@ -117,8 +123,13 @@ export const VisibleRiverColumn = connect(
 // RiverSet
 //
 export const RiverSet = ({rivers}) => {
+  const TOTAL_SPACING = COLUMNSPACER * rivers.length;
+  const TOTAL_COLUMNS = COLUMNWIDTH * rivers.length;
+
   const style = {
+    padding: 10,
     position: 'relative',
+    width: TOTAL_SPACING + TOTAL_COLUMNS,
   };
   return (
     <div style={style}>
@@ -147,3 +158,18 @@ export const VisibleRiverSet = connect(
 )(
   RiverSet
 );
+
+export const AppRoot = () => {
+  const bgstyle = {
+    backgroundColor: BASE_COLOR,
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+  };
+  return <div>
+    <div style={bgstyle} />
+    <VisibleRiverSet />
+  </div>;
+};
