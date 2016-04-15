@@ -4,7 +4,7 @@ import { connect, Provider } from 'react-redux'
 import { createStore, applyMiddleware } from 'redux'
 import thunkMiddleware from 'redux-thunk'
 
-import { data } from './data'
+// import { data } from './data'
 import { AppRoot } from './ui'
 
 // Redux actions-- these are basically helper functions and records to carry
@@ -122,15 +122,15 @@ function refreshRiverList() {
 // The redux reducer-- this is the core logic of the app that evolves the app
 // state in response to actions.
 //
-const default_state = {
-  rivers: [
-    {
-      name: 'Main',
-      updates: data.updatedFeeds.updatedFeed,
-      url: '/api/v1/river/doty/Main',
-    },
-  ],
-}
+// const default_state = {
+//   rivers: [
+//     {
+//       name: 'Main',
+//       updates: data.updatedFeeds.updatedFeed,
+//       url: '/api/v1/river/doty/Main',
+//     },
+//   ],
+// }
 
 function state_river(state = {}, action) {
   switch(action.type) {
@@ -182,7 +182,7 @@ function sociallistsApp(state = {}, action) {
 //
 let store = createStore(
   sociallistsApp,
-  default_state,
+  // default_state,
   applyMiddleware(thunkMiddleware)
 );
 
