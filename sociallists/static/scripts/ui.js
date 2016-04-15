@@ -1,6 +1,7 @@
 var React = require('react'); // N.B. Still need this because JSX.
 import { connect } from 'react-redux'
 
+// ---- Palette
 // http://paletton.com/#uid=12-0u0kleqtbzEKgVuIpcmGtdhZ
 const COLOR_VERY_DARK = '#42800B';
 const COLOR_DARK = '#5EA222';
@@ -10,6 +11,14 @@ const COLOR_VERY_LIGHT = '#BFEC97';
 
 const COLOR_BLACK = '#222';
 const COLOR_DARK_GREY = '#444';
+const COLOR_VERY_LIGHT_GREY = '#EEE';
+const COLOR_LIGHT_GREY = '#BBB';
+
+const APP_BACKGROUND_COLOR = COLOR_VERY_LIGHT;
+const APP_TEXT_COLOR = COLOR_DARK_GREY;
+const DEFAULT_LINK_COLOR = COLOR_BLACK;
+const RIVER_COLUMN_BACKGROUND_COLOR = COLOR_VERY_LIGHT_GREY;
+const RIVER_TITLE_BACKGROUND_COLOR = COLOR_BASE;
 
 const SANS_FONTS = [
   'AvenirNext-Medium',
@@ -20,13 +29,19 @@ const SANS_FONTS = [
   'sans-serif',
 ];
 
+// ---- Sizes
+
 const COLUMNWIDTH = 400;
 const COLUMNSPACER = 10;
 
+// ---- Default Styles
+
 const DEFAULT_LINK_STYLE = {
-  color: COLOR_BLACK,
+  color: DEFAULT_LINK_COLOR,
   textDecoration: 'initial',
 };
+
+// ---- Components
 
 export const RiverItemTitle = ({item}) => {
   const style = Object.assign({}, DEFAULT_LINK_STYLE, {
@@ -106,7 +121,8 @@ export const RiverFeedUpdate = ({update}) => {
 //
 const RiverTitle = ({river}) => {
   const style = {
-    backgroundColor: COLOR_BASE,
+    paddingLeft: 10,
+    backgroundColor: RIVER_TITLE_BACKGROUND_COLOR,
   }
   return <h1 style={style}>{river.name}</h1>;
 };
@@ -119,7 +135,7 @@ const RiverColumn = ({rivers, index}) => {
     position: 'absolute',
     top: COLUMNSPACER,
     left: index * (COLUMNWIDTH + COLUMNSPACER) + COLUMNSPACER,
-    backgroundColor: '#FEFEF2',
+    backgroundColor: RIVER_COLUMN_BACKGROUND_COLOR,
   };
 
   let river = rivers[index] || {};
@@ -197,11 +213,11 @@ export const VisibleRiverSet = connect(
 
 export const AppRoot = () => {
   const appstyle = {
-    color: COLOR_DARK_GREY,
+    color: APP_TEXT_COLOR,
     fontFamily: SANS_FONTS,
   };
   const bgstyle = {
-    backgroundColor: COLOR_VERY_LIGHT,
+    backgroundColor: APP_BACKGROUND_COLOR,
     position: 'fixed',
     top: 0,
     left: 0,
