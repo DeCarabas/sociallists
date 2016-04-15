@@ -2,6 +2,7 @@ import feedparser
 import logging
 import traceback
 
+from collections import namedtuple
 from concurrent import futures
 from datetime import datetime
 from hashlib import sha1
@@ -40,7 +41,78 @@ def do_rename_feed(db_session, feed, new_url):
             river.feeds.append(existing_feed)
     return False
 
-def do_update_feed(db_session, feed):
+def get_new_permanent_url(response):
+    """Return the permanent URL for a request based on its response.
+
+    This is a little complicated, and the code below might seem wrong on first
+    inspection, so pay attention.
+
+    The rationale for this chasing behavior is to treat temporary redirects
+    as non-authoritative, that is, as soon as we hit a temporary redirect we
+    can stop. Consider this history:
+
+       a.com => 301 b.com
+       b.com => 302 c.com
+       c.com => 301 d.com
+       d.com => 200
+
+    In this case we want to update our records of a.com to b.com, since it's
+    a permanent redirect. But next time, when we start at b.com, we don't care
+    that c.com is permanently redirected to d.com -- we don't have c.com in
+    our database, and maybe tomorrow b.com will send us a temporary redirect
+    to somewhere else.
+
+    Now, the .url properties of the responses in response.history are the URLs
+    that were requested, not the URLs we were redirected to, but the
+    .is_permanent_redirect field refers to the response we got from that URL.
+    So it's easy-- we just need to find the first URL in our history for which
+    .is_permanent_redirect returns False, and that's where we should live.
+    """
+    response_history = response.history + [ response ]
+    for h in response_history:
+        if not h.is_permanent_redirect:
+            final_url = h.url
+
+    # If there weren't any temporary redirects we'll get down here.
+    return response.url
+
+def do_fetch_feed(feed, http_session):
+    """Fetch and parse the feed, returning the parsed feed.
+
+    Does not modify the feed object."""
+    headers = {
+        'If-Modified-Since': feed.modified_header,
+        'If-None-Match': feed.etag_header,
+    }
+
+    response = http_session.get(feed.url, headers=headers, timeout=(10.05,30))
+    logger.info('Feed {feed_url} => {response_url}, {response_status}'.format(
+        feed_url=feed.url,
+        response_url=response.url,
+        response_status=response.status_code,
+    ))
+
+    f = feedparser.parse(http_util.FeedparserShim(response))
+
+    # Universal feed parser is nice but doesn't do the right analysis on the
+    # request history, so we correct it here.
+    f.href = get_new_permanent_url(response)
+    f.status = response.status_code
+    return f
+
+FeedUpdate = namedtuple('FeedUpdate', ['feed', 'river', 'history', 'time'])
+FeedUpdate.__doc__ = "A record of the results of checking for a feed update."
+FeedUpdate.feed.__doc__ = "The parsed feed from the feed parser."
+FeedUpdate.river.__doc__ = "The river computed from the parsed feed."
+FeedUpdate.history.__doc__ = "The new history list from the feed."
+FeedUpdate.time.__doc__ = "The official time of the update (UTC)."
+
+def get_feed_update(feed, history):
+    """Compute a FeedUpdate for the given feed given the state of the world now.
+
+    This isn't side-effect free, since it does network IO, but it does not
+    modify the feed object.
+    """
     update_time = datetime.utcnow()
     logger.info('Updating feed {url} ({etag}/{modified}) @ {now}'.format(
         url=feed.url,
@@ -49,79 +121,65 @@ def do_update_feed(db_session, feed):
         now=update_time.isoformat(),
     ))
 
-    if feed.last_status == 410:
-        logger.info('Skipping feed %s because it is HTTP_GONE' % feed.url)
-        return
-
-    headers = {
-        'If-Modified-Since': feed.modified_header,
-        'If-None-Match': feed.etag_header,
-    }
-
     http_session = http_util.session()
-    response = http_session.get(feed.url, headers=headers, timeout=(10.05,30))
-    logger.info('Feed %s => %s, %d' % (feed.url, response.url, response.status_code))
+    f = do_fetch_feed(feed, http_session)
 
-    # The .url properties of the history responses are the URLs *before* the redirect
-    # was followed, so it's the .url of the next response we care about. As
-    # soon as a response in the history is not a permanent redirect, we can
-    # record that URL, and stop chasing the chain.
-    response_history = response.history + [ response ]
-    for h in response_history:
-        if not h.is_permanent_redirect:
-            if feed.url != h.url:
-                if not do_rename_feed(db_session, feed, h.url):
-                    logger.info("Marking '%s' as dead after rename" % feed.url)
-                    feed.last_status = 410
-                    return
-
-    f = feedparser.parse(http_util.FeedparserShim(response))
     logger.info('Feed {url} has {count} entries'.format(
-        url=feed.url,
+        url=f.href,
         count=len(f.entries),
     ))
 
     entries_with_ids = [ (get_entry_id(entry), entry) for entry in f.entries ]
-
-    history = db.load_history_set(db_session, feed)
-    logger.info('Feed {url} old history:'.format(url=feed.url))
-    for h in sorted(history):
-        logger.info('Feed {url} : {id}'.format(
-            url=feed.url,
-            id=h,
-        ))
-
     new_entries = [
         e_id[1] for e_id in entries_with_ids if e_id[0] not in history
     ]
 
     f.entries = new_entries
     logger.info('Feed {url} has {count} NEW entries'.format(
-        url=feed.url,
+        url=f.href,
         count=len(f.entries),
     ))
 
-    if len(f.entries) > 0:
-        r_new = river.feed_to_river_update(f, feed.next_item_id, update_time, http_session)
-        feed.next_item_id += len(f.entries)
-        db.store_river(db_session, feed, update_time, r_new)
-        new_history = [ e_id[0] for e_id in entries_with_ids ]
+    river_update = river.feed_to_river_update(
+        f, feed.next_item_id, update_time, http_session
+    )
+    new_history = [ e_id[0] for e_id in entries_with_ids ]
 
-        logger.info('Feed {url} new history:'.format(url=feed.url))
-        for h in sorted(new_history):
-            logger.info('Feed {url} : {id}'.format(
-                url=feed.url,
-                id=h,
-            ))
+    return FeedUpdate(
+        feed=f,
+        river=river_update,
+        history=new_history,
+        time=update_time,
+    )
 
-        db.store_history(db_session, feed, [ e_id[0] for e_id in entries_with_ids ])
+def apply_feed_update(db_session, feed, update):
+    """Apply the updates in the specified update to the feed object."""
+    if feed.url != update.feed.href:
+        if not do_rename_feed(db_session, feed, update.feed.href):
+            logger.info("Marking %s dead after rename" % feed.url)
+            feed.last_status = 410
+            return
 
-    feed.etag_header = f.get('etag', None)
-    feed.modified_header = f.get('modified', None)
-    feed.last_status = response.status_code
-    db_session.add(feed)
+    if len(update.feed.entries) > 0:
+        feed.next_item_id += len(update.feed.entries)
+        db.store_river(db_session, feed, update.time, update.river)
+        db.store_history(db_session, feed, update.history)
+
+    feed.etag_header = update.feed.get('etag', None)
+    feed.modified_header = update.feed.get('modified', None)
+    feed.last_status = update.feed.status
+
+def do_update_feed(db_session, feed):
+    if feed.last_status == 410:
+        logger.info('Skipping feed %s because it is HTTP_GONE' % feed.url)
+    else:
+        history = db.load_history_set(db_session, feed)
+        update = get_feed_update(feed, history)
+        apply_feed_update(db_session, feed, update)
+        db_session.add(feed)
 
 def update_feed(feed):
+    """Update a single feed."""
     with db.session() as db_session:
         try:
             do_update_feed(db_session, feed)
