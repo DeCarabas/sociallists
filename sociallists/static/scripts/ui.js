@@ -133,6 +133,32 @@ const RiverTitle = ({river}) => {
   return <h1 style={style}>{river.name}</h1>;
 };
 
+const RiverItems = ({river}) => {
+  let style = {
+    maxHeight: '100%',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    position: 'absolute',
+    top: 65,
+    bottom: 0,
+    width: COLUMNWIDTH,
+  };
+
+  let updates = river.updates || [];
+  return (
+    <div style={style}>
+    {
+      updates.map(u =>
+        <RiverFeedUpdate
+          update={u}
+          key={ u.feedUrl + '|' + u.whenLastUpdate }
+          />
+      )
+    }
+    </div>
+  )
+}
+
 // RiverColumn
 //
 const RiverColumn = ({rivers, index}) => {
@@ -142,21 +168,14 @@ const RiverColumn = ({rivers, index}) => {
     top: COLUMNSPACER,
     left: index * (COLUMNWIDTH + COLUMNSPACER) + COLUMNSPACER,
     backgroundColor: RIVER_COLUMN_BACKGROUND_COLOR,
+    bottom: COLUMNSPACER,
   };
 
   let river = rivers[index] || {};
-  let updates = river.updates || [];
   return (
     <div style={style}>
       <RiverTitle river={river} />
-      {
-        updates.map(u =>
-          <RiverFeedUpdate
-            update={u}
-            key={ u.feedUrl + '|' + u.whenLastUpdate }
-            />
-        )
-      }
+      <RiverItems river={river} />
     </div>
   );
 };
@@ -188,6 +207,7 @@ export const RiverSet = ({rivers}) => {
     padding: 10,
     position: 'relative',
     width: TOTAL_SPACING + TOTAL_COLUMNS,
+    height: '100%',
   };
   return (
     <div style={style}>
@@ -222,6 +242,7 @@ export const AppRoot = () => {
     color: APP_TEXT_COLOR,
     fontFamily: SANS_FONTS,
     fontSize: TEXT_FONT_SIZE,
+    height: '100%',
   };
   const bgstyle = {
     backgroundColor: APP_BACKGROUND_COLOR,

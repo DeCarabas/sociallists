@@ -1,11 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html style="height: 100%;"">
   <head>
     <meta charset="UTF-8" />
     <title>Feeds</title>
+    <style>
+      * {
+        -webkit-box-sizing: border-box;
+           -moz-box-sizing: border-box;
+                box-sizing: border-box;
+      }
+    </style>
   </head>
-  <body style="margin: 0px">
-    <div id="example"></div>
+  <body style="margin: 0px; height: 100%;">
+    <div id="example" style="height: 100%;"></div>
     <script src="{{ url_for('static', filename='scripts/bundle.js') }}"></script>
   </body>
 </html>
