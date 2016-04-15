@@ -134,14 +134,18 @@ const RiverTitle = ({river}) => {
 };
 
 const RiverItems = ({river}) => {
+  const TOP_SPACE = 65;
+  const SIDE_PADDING = 3;
+
   let style = {
     maxHeight: '100%',
     overflowX: 'hidden',
     overflowY: 'auto',
     position: 'absolute',
-    top: 65,
-    bottom: 0,
-    width: COLUMNWIDTH,
+    top: TOP_SPACE,
+    bottom: SIDE_PADDING,
+    left: SIDE_PADDING,
+    right: SIDE_PADDING,
   };
 
   let updates = river.updates || [];
@@ -169,6 +173,8 @@ const RiverColumn = ({rivers, index}) => {
     left: index * (COLUMNWIDTH + COLUMNSPACER) + COLUMNSPACER,
     backgroundColor: RIVER_COLUMN_BACKGROUND_COLOR,
     bottom: COLUMNSPACER,
+    borderRadius: 10,
+    border: '1px solid ' + COLOR_VERY_DARK,
   };
 
   let river = rivers[index] || {};
