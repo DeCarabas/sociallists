@@ -59,8 +59,24 @@ export const RiverItemTitle = ({item}) => {
   );
 }
 
-// RiverItem
-//
+export const RiverItemThumbnail = ({item}) => {
+  let thumb = item.thumbnail;
+  if (thumb) {
+    const imgstyle = {
+      float: 'right',
+      width: 100,
+      height: 100,
+      marginTop: 10,
+      marginLeft: 3,
+      marginRight: 3,
+      marginBottom: 3,
+    }
+    return <img style={imgstyle} src={thumb.url} />;
+  } else {
+    return <span />;
+  }
+}
+
 export const RiverItem = ({item}) => {
   let style = {
     border: "1px solid AAA",
@@ -69,7 +85,10 @@ export const RiverItem = ({item}) => {
   return(
     <div style={style}>
       <RiverItemTitle item={item} />
+      <div style={{float: 'clear'}} />
+      <RiverItemThumbnail item={item} />
       <p>{ item.body }</p>
+      <div style={{float: 'clear'}} />
     </div>
   );
 };
