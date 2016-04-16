@@ -1,4 +1,5 @@
 import feedparser
+import io
 import logging
 import traceback
 
@@ -6,7 +7,7 @@ from collections import namedtuple
 from concurrent import futures
 from datetime import datetime
 from hashlib import sha1
-from sociallists import db, river, http_util
+from sociallists import db, media, river, http_util
 from time import perf_counter
 
 logger = logging.getLogger('sociallists.feed')
@@ -100,6 +101,36 @@ def do_fetch_feed(feed, http_session):
     f.status = response.status_code
     return f
 
+
+def get_item_thumbnail(item, http_session):
+    """Attempt to synthesize a thumbnail for this item if there isn't one.
+
+    This is here instead of in river.py because it can be very very slow, and
+    is not really part of converting rivers. Also we need to understand the
+    __image key and rewrite it before it goes to JSON.
+    """
+    thumbnail = item.get('thumbnail')
+    if thumbnail is None:
+        size = (256,256)
+        thumbnail = {
+            '__image': media.get_url_image(item['link'], size, http_session),
+            'width': size[0],
+            'height': size[1],
+        }
+    return thumbnail
+
+def store_item_thumbnail(db_session, item):
+    thumbnail = item.get('thumbnail')
+    if thumbnail is not None:
+        image = thumbnail.get('__image')
+        if image is not None:
+            bio = io.BytesIO()
+            image.save(bio, 'jpeg')
+            blob = db.store_blob(db_session, 'image/jpeg', bio.getbuffer())
+
+            del thumbnail['__image']
+            thumbnail['__blob'] = blob.hash
+
 FeedUpdate = namedtuple('FeedUpdate', ['feed', 'river', 'history', 'time'])
 FeedUpdate.__doc__ = "A record of the results of checking for a feed update."
 FeedUpdate.feed.__doc__ = "The parsed feed from the feed parser."
@@ -143,6 +174,9 @@ def get_feed_update(feed, history):
     river_update = river.feed_to_river_update(
         f, feed.next_item_id, update_time, http_session
     )
+    for item in river_update['item']:
+        item['thumbnail'] = get_item_thumbnail(item, http_session)
+
     new_history = [ e_id[0] for e_id in entries_with_ids ]
 
     return FeedUpdate(
@@ -162,6 +196,8 @@ def apply_feed_update(db_session, feed, update):
 
     if len(update.feed.entries) > 0:
         feed.next_item_id += len(update.feed.entries)
+        for item in update.river['item']:
+            store_item_thumbnail(db_session, item)
         db.store_river(db_session, feed, update.time, update.river)
         db.store_history(db_session, feed, update.history)
 

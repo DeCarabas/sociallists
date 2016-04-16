@@ -9,16 +9,6 @@ from sociallists import db, http_util
 
 logger = logging.getLogger('sociallists.feed')
 
-def get_url_image_object(url, size, db_session, http_session):
-    img = get_url_image(url, size, http_session)
-
-    buff = io.BytesIO()
-    img.save(buff, 'JPEG')
-    data = buff.getbuffer()
-
-    return db.store_blob(db_session, 'image/jpeg', data)
-
-
 def get_url_image(url, size, http_session=None):
     """Compute the appropriate image for the given URL, or None if there is no
     image.
@@ -49,7 +39,7 @@ def _fetch_url(url, http_session, referer=None):
     """Fetch data from the specified URL, return (url, content-type, data) tuple."""
     response = http_session.get(url, headers={'Referer': referer})
     result = (response.url, response.headers['Content-Type'], response.content)
-    logger.debug('{url} Fetched {r_url}, {content_type}, {length} bytes'.format(
+    logger.info('{url} Fetched {r_url}, {content_type}, {length} bytes'.format(
         url=url, r_url=result[0], content_type=result[1], length=len(result[2])
     ))
     return result
