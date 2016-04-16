@@ -5,9 +5,19 @@ import urllib.parse
 
 from bs4 import BeautifulSoup
 from PIL import Image, ImageFile
-from sociallists import http_util
+from sociallists import db, http_util
 
 logger = logging.getLogger('sociallists.feed')
+
+def get_url_image_object(url, size, db_session, http_session):
+    img = get_url_image(url, size, http_session)
+
+    buff = io.BytesIO()
+    img.save(buff, 'JPEG')
+    data = buff.getbuffer()
+
+    return db.store_blob(db_session, 'image/jpeg', data)
+
 
 def get_url_image(url, size, http_session=None):
     """Compute the appropriate image for the given URL, or None if there is no
@@ -53,10 +63,8 @@ def _image_entropy(img):
     return -sum(p * math.log(p, 2) for p in hist if p != 0)
 
 def _crop_image_vertically(img, target_height):
-    """Crop image vertically the the specified height, and determine which
-    pieces to cut off based on the entropy pieces."""
+    """Crop image vertically to the specified height."""
     x,y = img.size
-
     while y > target_height:
         #slice 10px at a time until square
         slice_height = min(y - target_height, 10)
@@ -71,13 +79,31 @@ def _crop_image_vertically(img, target_height):
             img = img.crop((0, slice_height, x, y))
 
         x,y = img.size
+    return img
 
+def _crop_image_horizontally(img, target_width):
+    """Crop image horizontally to the specified width."""
+    width,height = img.size
+    while width > target_width:
+        slice_width = min(width - target_width, 10)
+        left = img.crop((0, 0, slice_width, height))
+        right = img.crop((width - slice_width, 0, width, height))
+
+        if _image_entropy(left) < _image_entropy(right):
+            img = img.crop((slice_width, 0, width, height))
+        else:
+            img = img.crop((0, 0, width - slice_width, height))
+
+        width, height = img.size
     return img
 
 def _square_image(img):
-    """If the image is taller than it is wide, square it off."""
-    width = img.size[0]
-    return _crop_image_vertically(img, width)
+    """Make the image square, hopefully in a good way."""
+    width, height = img.size
+    if width > height:
+        return _crop_image_horizontally(img, target_width=height)
+    else:
+        return _crop_image_vertically(img, target_height=width)
 
 def _load_image(image_data):
     """Load the image from the image data using PILLOW or not."""
@@ -192,4 +218,5 @@ def _find_thumbnail_image(url, http_session):
 if __name__=='__main__':
     import sys
     img = get_url_image(sys.argv[1], (128, 128))
+    print(img.size)
     img.save('foo.png')

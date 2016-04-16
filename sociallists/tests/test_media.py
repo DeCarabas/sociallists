@@ -18,6 +18,8 @@ def test_get_url_image(data_dir):
         http_session=http_session,
     )
     assert actual_img is not None
+    assert actual_img.size[0] == 128
+    assert actual_img.size[1] == 128
 
     stream = io.BytesIO()
     actual_img.save(stream, "PNG")

@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import os
@@ -8,7 +9,15 @@ from sqlalchemy import create_engine, Table, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship
 from sqlalchemy.schema import Column, ForeignKey
-from sqlalchemy.types import DateTime, Integer, Unicode, UnicodeText, BigInteger
+from sqlalchemy.types import (
+    DateTime,
+    Integer,
+    LargeBinary,
+    String,
+    Unicode,
+    UnicodeText,
+    BigInteger,
+)
 
 logger = logging.getLogger('sociallists.db')
 
@@ -22,6 +31,17 @@ river_feeds = Table('river_feeds', Base.metadata,
     Column('river_id', ForeignKey('rivers.id'), primary_key=True),
     Column('feed_id', ForeignKey('feeds.id'), primary_key=True),
 )
+
+class BlobData(Base):
+    __tablename__ = 'blobs'
+    __table_args__ = (
+        UniqueConstraint('hash'),
+    )
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    hash = Column(String(64))
+    contentType = Column(String)
+    data = Column(LargeBinary)
 
 class RiverData(Base):
     __tablename__ = 'rivers'
@@ -171,3 +191,17 @@ def load_rivers_by_user(session, user):
     return (
         session.query(RiverData).filter(RiverData.user_id == user).all()
     )
+
+def get_blob(session, h):
+    return session.query(BlobData).filter(BlobData.hash == h).one_or_none()
+
+def store_blob(session, content_type, data):
+    h = hashlib.sha256(data).hexdigest()
+    blob = get_blob(session, h)
+    if blob is None:
+        blob = BlobData(hash=h, contentType=content_type, data=data)
+        session.add(blob)
+    elif blob.contentType != content_type:
+        blob.contentType = content_type
+        session.add(blob)
+    return blob
