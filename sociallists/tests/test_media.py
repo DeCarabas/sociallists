@@ -5,15 +5,20 @@ from betamax import Betamax
 
 import pytest
 
-def test_get_url_image(data_dir):
-    http_session = http_util.session()
+images = [
+    ('https://www.crummy.com/software/BeautifulSoup',     'beautiful_soup.png'),
+    ('http://whatever.scalzi.com/2016/04/15/zeus-41516/', 'zeus.png'),
+]
 
-    expected_img_data = open(data_dir+'/beautiful_soup.png', 'rb').read()
+@pytest.mark.parametrize('url,expected', images)
+def test_get_url_image(data_dir, url, expected):
+    http_session = http_util.session()
+    expected_img_data = data_dir.read(expected, 'b')
 
     # Can't use Betamax because it has a bug.
     # with Betamax(http_session).use_cassette('test_get_url_image'):
     actual_img = media.get_url_image(
-        url='https://www.crummy.com/software/BeautifulSoup',
+        url=url,
         size=(128,128),
         http_session=http_session,
     )
