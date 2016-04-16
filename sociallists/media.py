@@ -1,4 +1,5 @@
 import io
+import functools
 import logging
 import math
 import urllib.parse
@@ -112,6 +113,7 @@ def _extract_image_urls(url, soup):
     for img in soup.findAll("img", src=True):
         yield urllib.parse.urljoin(url, img["src"])
 
+@functools.lru_cache(maxsize=4096)
 def _fetch_image_size(url, http_session, referer):
     """Return the size of an image by URL downloading as little as possible."""
     parser = ImageFile.Parser()
@@ -123,7 +125,6 @@ def _fetch_image_size(url, http_session, referer):
         if parser.image:
             logger.debug('{url} OK'.format(url=url))
             return parser.image.size
-
     return None
 
 def _find_thumbnail_image(url, http_session):

@@ -111,7 +111,7 @@ def get_item_thumbnail(item, http_session):
     """
     thumbnail = item.get('thumbnail')
     if thumbnail is None:
-        size = (256,256)
+        size = (400,400)
         img = media.get_url_image(item['link'], size, http_session)
         if img:
             thumbnail = { '__image': img, 'width': size[0], 'height': size[1] }
