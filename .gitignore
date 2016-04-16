@@ -90,3 +90,5 @@ node_modules/
 # VERY SPECIFIC OUTPUTS?
 sociallists/static/scripts/bundle.js
 sociallists/static/scripts/bundle.js.map
+
+.DS_Store
