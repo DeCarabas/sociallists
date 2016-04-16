@@ -28,15 +28,26 @@ def get_river_list(user):
 
     return (result, 200, {'content-type': 'application/javascript'})
 
+def rewrite_river(r):
+    for u in r['updatedFeeds']['updatedFeed']:
+        for item in u['item']:
+            thumb = item.get('thumbnail')
+            if thumb is not None:
+                h = thumb.get('__blob')
+                if h is not None:
+                    thumb['url'] = url_for('get_blob', hash=thumb['__blob'])
+                    del thumb['__blob']
+    return r
+
 @app.route("/api/v1/river/<user>/<id>")
 def get_river(user,id):
-    r = river.aggregate_river(user,id)
+    r = rewrite_river(river.aggregate_river(user,id))
     result = json.dumps(r, indent=2, sort_keys=True)
     return (result, 200, {'content-type': 'application/json'})
 
 @app.route("/api/v1/river/<user>/<id>/public")
 def get_public_river(user,id):
-    r = river.aggregate_river(user,id)
+    r = rewrite_river(river.aggregate_river(user,id))
     result = "onGetRiverStream("+json.dumps(r, indent=2, sort_keys=True)+");"
     return (result, 200, {'content-type': 'application/javascript'})
 

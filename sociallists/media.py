@@ -13,27 +13,30 @@ def get_url_image(url, size, http_session=None):
     """Compute the appropriate image for the given URL, or None if there is no
     image.
     """
-    if http_session is None:
-        http_session = http_util.session()
+    try:
+        if http_session is None:
+            http_session = http_util.session()
 
-    logger.info('{url} Fetching image...'.format(url=url))
-    thumbnail_url, image_data = _find_thumbnail_image(url, http_session)
-    if thumbnail_url:
-        thumbnail_url = urllib.parse.urljoin(url, thumbnail_url)
-        logger.info('{url} thumbnail is {thumbnail_url}'.format(
-            url=url, thumbnail_url=thumbnail_url,
-        ))
-        if not image_data:
-            logger.info(
-                '{url} Fetching image data @ {thumbnail_url}'.format(
-                    url=url,
-                    thumbnail_url=thumbnail_url,
-                ))
-            _, _, image_data = _fetch_url(
-                thumbnail_url, http_session, referer=url)
+        logger.info('{url} Fetching image...'.format(url=url))
+        thumbnail_url, image_data = _find_thumbnail_image(url, http_session)
+        if thumbnail_url:
+            thumbnail_url = urllib.parse.urljoin(url, thumbnail_url)
+            logger.info('{url} thumbnail is {thumbnail_url}'.format(
+                url=url, thumbnail_url=thumbnail_url,
+            ))
+            if not image_data:
+                logger.info(
+                    '{url} Fetching image data @ {thumbnail_url}'.format(
+                        url=url,
+                        thumbnail_url=thumbnail_url,
+                    ))
+                _, _, image_data = _fetch_url(
+                    thumbnail_url, http_session, referer=url)
 
-    # TODO: Store image entity in database?
-    return _prepare_image(image_data, size) if image_data else None
+        # TODO: Store image entity in database?
+        return _prepare_image(image_data, size) if image_data else None
+    except IOError:
+        return None
 
 def _fetch_url(url, http_session, referer=None):
     """Fetch data from the specified URL, return (url, content-type, data) tuple."""
