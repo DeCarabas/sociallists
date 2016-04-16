@@ -80,6 +80,7 @@ export const RiverItemThumbnail = ({item}) => {
 export const RiverItem = ({item}) => {
   let style = {
     border: "1px solid AAA",
+    overflow: 'auto',
   };
 
   return(
