@@ -10,6 +10,8 @@ from sociallists import db, http_util
 
 logger = logging.getLogger('sociallists.feed')
 
+_BEAUTIFUL_PARSER = "html.parser"
+
 def get_url_image(url, size, http_session=None):
     """Compute the appropriate image for the given URL, or None if there is no
     image.
@@ -34,7 +36,32 @@ def get_url_image(url, size, http_session=None):
                 _, _, image_data = _fetch_url(
                     thumbnail_url, http_session, referer=url)
 
-        # TODO: Store image entity in database?
+        return _prepare_image(image_data, size) if image_data else None
+    except IOError:
+        return None
+
+def get_html_image(url, html_string, size, http_session=None):
+    try:
+        if http_session is None:
+            http_session = http_util.session()
+
+        logger.info('{url} Fetching image...'.format(url=url))
+        image_data = None
+        soup = BeautifulSoup(html_string, _BEAUTIFUL_PARSER)
+        thumbnail_url = _find_thumbnail_url_from_soup(url, soup, http_session)
+        if thumbnail_url:
+            thumbnail_url = urllib.parse.urljoin(url, thumbnail_url)
+            logger.info('{url} thumbnail is {thumbnail_url}'.format(
+                url=url, thumbnail_url=thumbnail_url,
+            ))
+            logger.info(
+                '{url} Fetching image data @ {thumbnail_url}'.format(
+                    url=url,
+                    thumbnail_url=thumbnail_url,
+                ))
+            _, _, image_data = _fetch_url(
+                thumbnail_url, http_session, referer=url)
+
         return _prepare_image(image_data, size) if image_data else None
     except IOError:
         return None
@@ -135,27 +162,8 @@ def _fetch_image_size(url, http_session, referer):
             return parser.image.size
     return None
 
-def _find_thumbnail_image(url, http_session):
-    """Find what we think is the best thumbnail image for a link.
-    Returns a 2-tuple of image url and, as an optimization, the raw image
-    data.  A value of None for the former means we couldn't find an image;
-    None for the latter just means we haven't already fetched the image.
-    """
-    url, content_type, content = _fetch_url(url, http_session)
-
-    # if it's an image, it's pretty easy to guess what we should thumbnail.
-    if content_type and "image" in content_type and content:
-        logger.info('{url} is an image'.format(url=url))
-        return url, content
-
-    if content_type and "html" in content_type and content:
-        # TODO: Investigate other parsers
-        logger.info('{url} is HTML'.format(url=url))
-        soup = BeautifulSoup(content, "html.parser")
-    else:
-        logger.info('{url} is an unsupported type'.format(url=url))
-        return None, None
-
+def _find_thumbnail_url_from_soup(url, soup, http_session):
+    """Find the thumbnail url given a beautiful soup."""
     # Allow the content author to specify the thumbnail using the Open
     # Graph protocol: http://ogp.me/
     og_image = (soup.find('meta', property='og:image') or
@@ -163,19 +171,19 @@ def _find_thumbnail_image(url, http_session):
     if og_image and og_image.get('content'):
         logger.info('{url} using opengraph image content URL (2)'.format(
             url=url))
-        return og_image['content'], None
+        return og_image['content']
     og_image = (soup.find('meta', property='og:image:url') or
                 soup.find('meta', attrs={'name': 'og:image:url'}))
     if og_image and og_image.get('content'):
         logger.info('{url} using opengraph image content URL (2)'.format(
             url=url))
-        return og_image['content'], None
+        return og_image['content']
 
     # <link rel="image_src" href="http://...">
     thumbnail_spec = soup.find('link', rel='image_src')
     if thumbnail_spec and thumbnail_spec['href']:
         logger.info('{url} using thumbnail link rel'.format(url=url))
-        return thumbnail_spec['href'], None
+        return thumbnail_spec['href']
 
     # ok, we have no guidance from the author. look for the largest
     # image on the page with a few caveats. (see below)
@@ -215,7 +223,30 @@ def _find_thumbnail_image(url, http_session):
             max_area = area
             max_url = image_url
 
-    return max_url, None
+    return max_url
+
+def _find_thumbnail_image(url, http_session):
+    """Find what we think is the best thumbnail image for a link.
+    Returns a 2-tuple of image url and, as an optimization, the raw image
+    data.  A value of None for the former means we couldn't find an image;
+    None for the latter just means we haven't already fetched the image.
+    """
+    url, content_type, content = _fetch_url(url, http_session)
+
+    # if it's an image, it's pretty easy to guess what we should thumbnail.
+    if content_type and "image" in content_type and content:
+        logger.info('{url} is an image'.format(url=url))
+        return url, content
+
+    if content_type and "html" in content_type and content:
+        # TODO: Investigate other parsers
+        logger.info('{url} is HTML'.format(url=url))
+        soup = BeautifulSoup(content, _BEAUTIFUL_PARSER)
+    else:
+        logger.info('{url} is an unsupported type'.format(url=url))
+        return None, None
+
+    return _find_thumbnail_url_from_soup(url, soup, http_session), None
 
 if __name__=='__main__':
     logging.basicConfig(

@@ -1,7 +1,7 @@
 import logging
 import time
 
-from sociallists import db, http_util
+from sociallists import db, http_util, media
 
 from datetime import datetime
 from email import utils
@@ -91,12 +91,39 @@ def get_entry_permalink(e, session=None):
     else:
         return ''
 
+def get_entry_thumbnail_image(entry, session=None):
+    if session is None:
+        session = http_util.session()
+
+    link = entry.get('link', None)
+    size = (400, 400)
+
+    # Check the content...
+    thumbnail_image = None
+    content = entry.get('content', None)
+    if content is not None:
+        for c in content:
+            html = c.value
+            thumbnail_image = media.get_html_image(link, html, size, session)
+            if thumbnail_image is not None:
+                break
+
+    if thumbnail_image is None:
+        summary = entry.get('summary', None)
+        if summary is not None:
+            thumbnail_image = media.get_html_image(link, summary, size, session)
+
+    if thumbnail_image is None:
+        thumbnail_image = media.get_url_image(link, size, session)
+
+    return thumbnail_image
+
 def entry_to_river(entry, i, session=None):
     """Convert a feed entry to a river.js item"""
     # TODO: See if you can pull a thumbnail.
     # TODO: See if you can pull enclosures.
 
-    return {
+    item = {
         "title": entry.get('title', ''),
         "link": entry.get('link', ''),
         "body": convert_description(entry.get('description', '')),
@@ -104,6 +131,14 @@ def entry_to_river(entry, i, session=None):
         "permaLink": get_entry_permalink(entry, session),
         "id": str(i),
     }
+    image = get_entry_thumbnail_image(entry, session)
+    if image is not None:
+        item["thumbnail"] = {
+            '__image': image,
+            'width': image.size[0],
+            'height': image.size[1],
+        }
+    return item
 
 def wrap_feed_updates(feed_updates):
     """Wrap an array of feed updates in the broader river.js format"""

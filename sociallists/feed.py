@@ -101,22 +101,6 @@ def do_fetch_feed(feed, http_session):
     f.status = response.status_code
     return f
 
-
-def get_item_thumbnail(item, http_session):
-    """Attempt to synthesize a thumbnail for this item if there isn't one.
-
-    This is here instead of in river.py because it can be very very slow, and
-    is not really part of converting rivers. Also we need to understand the
-    __image key and rewrite it before it goes to JSON.
-    """
-    thumbnail = item.get('thumbnail')
-    if thumbnail is None:
-        size = (400,400)
-        img = media.get_url_image(item['link'], size, http_session)
-        if img:
-            thumbnail = { '__image': img, 'width': size[0], 'height': size[1] }
-    return thumbnail
-
 def store_item_thumbnail(item):
     thumbnail = item.get('thumbnail')
     if thumbnail is not None:
@@ -175,10 +159,6 @@ def get_feed_update(feed, history):
     river_update = river.feed_to_river_update(
         f, feed.next_item_id, update_time, http_session
     )
-    for item in river_update['item']:
-        thumb = get_item_thumbnail(item, http_session)
-        if thumb:
-            item['thumbnail'] = thumb
 
     new_history = [ e_id[0] for e_id in entries_with_ids ]
 
