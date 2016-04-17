@@ -117,17 +117,20 @@ def get_item_thumbnail(item, http_session):
             thumbnail = { '__image': img, 'width': size[0], 'height': size[1] }
     return thumbnail
 
-def store_item_thumbnail(db_session, item):
+def store_item_thumbnail(item):
     thumbnail = item.get('thumbnail')
     if thumbnail is not None:
         image = thumbnail.get('__image')
         if image is not None:
             bio = io.BytesIO()
-            image.save(bio, 'jpeg')
-            blob = db.store_blob(db_session, 'image/jpeg', bio.getbuffer())
+            image.convert('RGB').save(bio, 'jpeg')
+            with db.session() as db_session:
+                blob = db.store_blob(db_session, 'image/jpeg', bio.getbuffer())
+                hash = blob.hash
+                db_session.commit()
 
             del thumbnail['__image']
-            thumbnail['__blob'] = blob.hash
+            thumbnail['__blob'] = hash
 
 FeedUpdate = namedtuple('FeedUpdate', ['feed', 'river', 'history', 'time'])
 FeedUpdate.__doc__ = "A record of the results of checking for a feed update."
@@ -197,7 +200,7 @@ def apply_feed_update(db_session, feed, update):
     if len(update.feed.entries) > 0:
         feed.next_item_id += len(update.feed.entries)
         for item in update.river['item']:
-            store_item_thumbnail(db_session, item)
+            store_item_thumbnail(item)
         db.store_river(db_session, feed, update.time, update.river)
         db.store_history(db_session, feed, update.history)
 

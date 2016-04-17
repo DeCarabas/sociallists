@@ -109,9 +109,17 @@ def _prepare_image(image_data, size):
     image.thumbnail(size, Image.ANTIALIAS)
     return image
 
+def _should_ignore_image_url(url):
+    netloc = urllib.parse.urlparse(url)[1]
+    if netloc.endswith('gravatar.com'):
+        return True
+    return False
+
 def _extract_image_urls(url, soup):
     for img in soup.findAll("img", src=True):
-        yield urllib.parse.urljoin(url, img["src"])
+        image_url = img["src"]
+        if not _should_ignore_image_url(image_url):
+            yield urllib.parse.urljoin(url, image_url)
 
 @functools.lru_cache(maxsize=4096)
 def _fetch_image_size(url, http_session, referer):
