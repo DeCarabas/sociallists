@@ -13,7 +13,6 @@
   1. Automatically refresh feed for the first time if no refresh has been done
 - On the add feed flow add autodiscovery and redirect chasing before adding
   to the DB
-- Use BeautifulSoup to extract thumbnails
 - Extract enclosures and the like
 - Re-visit use of requirements and packages and vendoring and the like
 - Put river items in the DB so that we can efficiently re-run the processing
@@ -25,3 +24,4 @@
   intelligently.
 - Implement pubsubhubbub
 - Fill out the More box in the UI to expand things
+- METRICS
