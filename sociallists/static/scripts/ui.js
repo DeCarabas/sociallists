@@ -53,9 +53,10 @@ export const RiverItemTitle = ({item}) => {
   const style = Object.assign({}, DEFAULT_LINK_STYLE, {
     fontSize: ITEM_TITLE_FONT_SIZE,
   });
+  let titleText = item.title || item.pubDate;
   return (
     <a style={style} href={ item.link }>
-      { item.title }
+      { titleText }
     </a>
   );
 }
