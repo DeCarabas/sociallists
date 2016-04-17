@@ -37,6 +37,7 @@ const UPDATE_TITLE_FONT_SIZE = 12;
 // ---- Sizes
 
 const COLUMNWIDTH = 350;
+const FULL_IMAGE_WIDTH = 300;
 const COLUMNSPACER = 10;
 
 // ---- Default Styles
@@ -62,14 +63,21 @@ export const RiverItemTitle = ({item}) => {
 export const RiverItemThumbnail = ({item}) => {
   let thumb = item.thumbnail;
   if (thumb) {
-    const imgstyle = {
-      float: 'right',
+    let imgstyle = {
       width: 100,
       height: 100,
       marginTop: 10,
       marginLeft: 3,
       marginRight: 3,
       marginBottom: 3,
+    }
+    if ((item.body || '').length > 140) {
+      imgstyle.float = 'right';
+      imgstyle.width = 100;
+      imgstyle.height = 100;
+    } else {
+      imgstyle.width = FULL_IMAGE_WIDTH;
+      imgstyle.height = FULL_IMAGE_WIDTH;
     }
     return <img style={imgstyle} src={thumb.url} />;
   } else {
