@@ -218,7 +218,11 @@ def _find_thumbnail_image(url, http_session):
     return max_url, None
 
 if __name__=='__main__':
+    logging.basicConfig(
+        format='%(asctime)s %(message)s',
+        level=logging.DEBUG,
+    )
+
     import sys
-    img = get_url_image(sys.argv[1], (128, 128))
-    print(img.size)
+    img = get_url_image(sys.argv[1], (400, 400))
     img.save('foo.png')
