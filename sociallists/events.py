@@ -16,6 +16,7 @@ STATS = scales.collection(
 
     scales.IntStat('thumbnail_is_direct'),
     scales.IntStat('thumbnail_is_open_graph'),
+    scales.IntStat('thumbnail_is_twitter'),
     scales.IntStat('thumbnail_is_link_rel'),
     scales.IntStat('thumbnail_is_not_supported'),
     scales.IntStat('thumbnail_is_img_tag'),
@@ -61,8 +62,12 @@ def thumbnail_is_direct(url):
     STATS.thumbnail_is_direct += 1
 
 def thumbnail_is_open_graph(url):
-    logger.info('{url} using opengraph image content URL (2)'.format(url=url))
+    logger.info('{url} using opengraph image content URL'.format(url=url))
     STATS.thumbnail_is_open_graph += 1
+
+def thumbnail_is_twitter(url):
+    logger.info('{url} using twitter image content URL'.format(url=url))
+    STATS.thumbnail_is_twitter += 1
 
 def thumbnail_is_link_rel(url):
     logger.info('{url} using thumbnail link rel'.format(url=url))

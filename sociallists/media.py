@@ -153,6 +153,14 @@ def _extract_open_graph_url(url, soup):
 
     return None
 
+def _extract_twitter_image_url(url, soup):
+    tw_image = (soup.find('meta', property='twitter:image') or
+                soup.find('meta', attrs={'name': 'twitter:image'}))
+    if tw_image and tw_image.get('content'):
+        return tw_image['content']
+
+    return None
+
 def _should_ignore_image_url(url):
     if url.endswith('addgoogle2.gif'):
         return True
@@ -195,6 +203,11 @@ def _find_thumbnail_url_from_soup(url, soup, http_session):
         events.thumbnail_is_open_graph(url)
         return thumbnail_url
 
+    thumbnail_url = _extract_twitter_image_url(url, soup)
+    if thumbnail_url is not None:
+        events.thumbnail_is_twitter(url)
+        return thumbnail_url
+
     # <link rel="image_src" href="http://...">
     thumbnail_spec = soup.find('link', rel='image_src')
     if thumbnail_spec and thumbnail_spec['href']:
@@ -224,7 +237,7 @@ def _find_thumbnail_url_from_soup(url, soup, http_session):
             continue
 
         # ignore excessively long/wide images
-        if max(size) / min(size) > 1.5:
+        if max(size) / min(size) > 2.25:
             logger.debug('{url} {image_url} is too oblong'.format(
                 url=url, image_url=image_url))
             continue
