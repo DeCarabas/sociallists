@@ -1,7 +1,7 @@
 import logging
 import time
 
-from sociallists import db, http_util, media
+from sociallists import db, events, http_util, media
 
 from datetime import datetime
 from email import utils
@@ -95,28 +95,36 @@ def get_entry_thumbnail_image(entry, session=None):
     if session is None:
         session = http_util.session()
 
-    link = entry.get('link', None)
     size = (400, 400)
+    link = entry.get('link')
 
-    # Check the content...
-    thumbnail_image = None
-    content = entry.get('content', None)
+    # Check summary before content because the summary may contain one image
+    # where content contains many, but the single one in the summary is more
+    # likely to be the one we want.
+    #
+    summary = entry.get('summary')
+    if summary is not None:
+        thumbnail_image = media.get_html_image(link, summary, size, session)
+        if thumbnail_image is not None:
+            events.thumbnail_fetched_from_summary(entry)
+            return thumbnail_image
+
+    content = entry.get('content')
     if content is not None:
         for c in content:
-            html = c.value
-            thumbnail_image = media.get_html_image(link, html, size, session)
+            thumbnail_image = media.get_html_image(link, c.value, size, session)
             if thumbnail_image is not None:
-                break
+                events.thumbnail_fetched_from_content(entry)
+                return thumbnail_image
 
-    if thumbnail_image is None:
-        summary = entry.get('summary', None)
-        if summary is not None:
-            thumbnail_image = media.get_html_image(link, summary, size, session)
-
-    if thumbnail_image is None:
+    if link is not None:
         thumbnail_image = media.get_url_image(link, size, session)
+        if thumbnail_image is not None:
+            events.thumbnail_fetched_from_link(entry)
+            return thumbnail_image
 
-    return thumbnail_image
+    events.thumbnail_fetched_not_found(entry)
+    return None
 
 def entry_to_river(entry, i, session=None):
     """Convert a feed entry to a river.js item"""

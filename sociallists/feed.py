@@ -6,9 +6,10 @@ import traceback
 from collections import namedtuple
 from concurrent import futures
 from datetime import datetime
+from greplin import scales
+from greplin.scales import formats
 from hashlib import sha1
-from sociallists import db, media, river, http_util
-from time import perf_counter
+from sociallists import db, events, media, river, http_util
 
 logger = logging.getLogger('sociallists.feed')
 
@@ -23,24 +24,6 @@ def get_entry_id(entry):
             entry.get('title', '')
         ).encode('utf-8')).hexdigest()
     return id
-
-def do_rename_feed(db_session, feed, new_url):
-    """Set the url of the given feed, unless the new URL is already in the DB.
-
-    Returns True if the URL was set, or False if the rivers were changed to
-    refer to an existing feed."""
-    existing_feed = db.load_feed_by_url(db_session, new_url)
-    if not existing_feed:
-        feed.url = new_url
-        return True
-
-    # Renaming to existing feed. Need to renumber things appropriately.
-    rivers = db.load_rivers_by_feed(db_session, feed)
-    for river in rivers:
-        river.feeds.remove(feed)
-        if not existing_feed in river.feeds:
-            river.feeds.append(existing_feed)
-    return False
 
 def get_new_permanent_url(response):
     """Return the permanent URL for a request based on its response.
@@ -77,31 +60,13 @@ def get_new_permanent_url(response):
     # If there weren't any temporary redirects we'll get down here.
     return response.url
 
-def do_fetch_feed(feed, http_session):
-    """Fetch and parse the feed, returning the parsed feed.
-
-    Does not modify the feed object."""
-    headers = {
-        'If-Modified-Since': feed.modified_header,
-        'If-None-Match': feed.etag_header,
-    }
-
-    response = http_session.get(feed.url, headers=headers, timeout=(10.05,30))
-    logger.info('Feed {feed_url} => {response_url}, {response_status}'.format(
-        feed_url=feed.url,
-        response_url=response.url,
-        response_status=response.status_code,
-    ))
-
-    f = feedparser.parse(http_util.FeedparserShim(response))
-
-    # Universal feed parser is nice but doesn't do the right analysis on the
-    # request history, so we correct it here.
-    f.href = get_new_permanent_url(response)
-    f.status = response.status_code
-    return f
-
 def store_item_thumbnail(item):
+    """Write a river item's thumbnail into the database, and rewrite the
+    thumbnail to include a database reference.
+
+    (Replace __image, which is a PIL image, with __blob, which is the hash key
+    to the image stored in the database.)
+    """
     thumbnail = item.get('thumbnail')
     if thumbnail is not None:
         image = thumbnail.get('__image')
@@ -123,150 +88,226 @@ FeedUpdate.river.__doc__ = "The river computed from the parsed feed."
 FeedUpdate.history.__doc__ = "The new history list from the feed."
 FeedUpdate.time.__doc__ = "The official time of the update (UTC)."
 
-def get_feed_update(feed, history):
-    """Compute a FeedUpdate for the given feed given the state of the world now.
+class FeedUpdater(object):
+    """A little object that updates a feed.
 
-    This isn't side-effect free, since it does network IO, but it does not
-    modify the feed object.
+    The existance of this class was forced by the way that scales (the metrics
+    library) works, but we take advantage of it nonetheless.
     """
-    update_time = datetime.utcnow()
-    logger.info('Updating feed {url} ({etag}/{modified}) @ {now}'.format(
-        url=feed.url,
-        etag=feed.etag_header,
-        modified=feed.modified_header,
-        now=update_time.isoformat(),
-    ))
 
-    http_session = http_util.session()
-    f = do_fetch_feed(feed, http_session)
+    feed_entries = scales.IntStat('feed_entries')
+    new_entries = scales.IntStat('new_entries')
+    state = scales.Stat('state')
+    url = scales.Stat('url')
+    thumbnail_from_content = scales.IntStat('thumbnail_from_content')
+    thumbnail_from_link = scales.IntStat('thumbnail_from_link')
+    thumbnail_from_summary = scales.IntStat('thumbnail_from_summary')
+    update_time = scales.PmfStat('update_time')
 
-    logger.info('Feed {url} has {count} entries'.format(
-        url=f.href,
-        count=len(f.entries),
-    ))
+    def __init__(self, db_session, feed):
+        scales.initChild(self, feed.id)
+        self.db_session = db_session
+        self.feed = feed
+        self.http_session = http_util.session()
+        self.state = 'Created'
+        self.url = feed.url
 
-    entries_with_ids = [ (get_entry_id(entry), entry) for entry in f.entries ]
-    new_entries = [
-        e_id[1] for e_id in entries_with_ids if e_id[0] not in history
-    ]
+    def do_rename_feed(self, new_url):
+        """Set the url of the feed, unless the new URL is already in the DB.
 
-    f.entries = new_entries
-    logger.info('Feed {url} has {count} NEW entries'.format(
-        url=f.href,
-        count=len(f.entries),
-    ))
+        Returns True if the URL was set, or False if the rivers were changed to
+        refer to an existing feed."""
+        existing_feed = db.load_feed_by_url(self.db_session, new_url)
+        if not existing_feed:
+            self.feed.url = new_url
+            return True
 
-    river_update = river.feed_to_river_update(
-        f, feed.next_item_id, update_time, http_session
-    )
+        # Renaming to existing feed. Need to renumber things appropriately.
+        rivers = db.load_rivers_by_feed(self.db_session, self.feed)
+        for river in rivers:
+            river.feeds.remove(self.feed)
+            if not existing_feed in river.feeds:
+                river.feeds.append(existing_feed)
+        return False
 
-    new_history = [ e_id[0] for e_id in entries_with_ids ]
+    def do_fetch_feed(self):
+        """Fetch and parse the feed, returning the parsed feed.
 
-    return FeedUpdate(
-        feed=f,
-        river=river_update,
-        history=new_history,
-        time=update_time,
-    )
+        Does not modify the feed object."""
+        headers = {
+            'If-Modified-Since': self.feed.modified_header,
+            'If-None-Match': self.feed.etag_header,
+        }
 
-def apply_feed_update(db_session, feed, update):
-    """Apply the updates in the specified update to the feed object."""
-    if feed.url != update.feed.href:
-        if not do_rename_feed(db_session, feed, update.feed.href):
-            logger.info("Marking %s dead after rename" % feed.url)
-            feed.last_status = 410
-            return
+        response = self.http_session.get(
+            self.feed.url,
+            headers=headers,
+            timeout=(10.05,30),
+        )
+        logger.info('Feed {feed_url} => {response_url}, {response_status}'.format(
+            feed_url=self.feed.url,
+            response_url=response.url,
+            response_status=response.status_code,
+        ))
 
-    if len(update.feed.entries) > 0:
-        feed.next_item_id += len(update.feed.entries)
-        for item in update.river['item']:
-            store_item_thumbnail(item)
-        db.store_river(db_session, feed, update.time, update.river)
-        db.store_history(db_session, feed, update.history)
+        f = feedparser.parse(http_util.FeedparserShim(response))
 
-    feed.etag_header = update.feed.get('etag', None)
-    feed.modified_header = update.feed.get('modified', None)
-    feed.last_status = update.feed.status
+        # Universal feed parser is nice but doesn't do the right analysis on the
+        # request history, so we correct it here.
+        f.href = get_new_permanent_url(response)
+        f.status = response.status_code
+        return f
+
+    def get_feed_update(self, history):
+        """Compute a FeedUpdate for the given feed given the state of the world
+        now.
+
+        This isn't side-effect free, since it does network IO, but it does not
+        modify the feed object.
+        """
+        update_time = datetime.utcnow()
+        logger.info('Updating feed {url} ({etag}/{modified}) @ {now}'.format(
+            url=self.feed.url,
+            etag=self.feed.etag_header,
+            modified=self.feed.modified_header,
+            now=update_time.isoformat(),
+        ))
+
+        f = self.do_fetch_feed()
+        self.feed_entries = len(f.entries)
+
+        entries_with_ids = [
+            (get_entry_id(entry), entry) for entry in f.entries
+        ]
+        new_entries = [
+            e_id[1] for e_id in entries_with_ids if e_id[0] not in history
+        ]
+
+        f.entries = new_entries
+        self.new_entries = len(f.entries)
+
+        river_update = river.feed_to_river_update(
+            f, self.feed.next_item_id, update_time, self.http_session
+        )
+
+        new_history = [ e_id[0] for e_id in entries_with_ids ]
+
+        return FeedUpdate(
+            feed=f,
+            river=river_update,
+            history=new_history,
+            time=update_time,
+        )
+
+    def apply_feed_update(self, update):
+        """Apply the updates in the specified update to the feed object."""
+        if self.feed.url != update.feed.href:
+            if not self.do_rename_feed(update.feed.href):
+                logger.info("Marking %s dead after rename" % feed.url)
+                self.feed.last_status = 410
+                self.state = 'Renamed'
+                return
+
+        if len(update.feed.entries) > 0:
+            self.feed.next_item_id += len(update.feed.entries)
+            for item in update.river['item']:
+                store_item_thumbnail(item)
+            db.store_river(
+                self.db_session,
+                self.feed,
+                update.time,
+                update.river,
+            )
+            db.store_history(self.db_session, self.feed, update.history)
+            self.state = 'Updated'
+        else:
+            self.state = 'Unchanged'
+
+        self.feed.etag_header = update.feed.get('etag', None)
+        self.feed.modified_header = update.feed.get('modified', None)
+        self.feed.last_status = update.feed.status
+
+    def do_update_feed(self):
+        with self.update_time.time():
+            try:
+                if self.feed.last_status == 410:
+                    logger.info(
+                        'Skipping feed {url} because it is HTTP_GONE'.format(
+                            url=self.feed.url,
+                        ),
+                    )
+                    self.state = 'Dead'
+                    return None
+
+                history = db.load_history_set(self.db_session, self.feed)
+                update = self.get_feed_update(history)
+                self.apply_feed_update(update)
+                self.db_session.add(self.feed)
+                self.db_session.commit()
+            except:
+                e = traceback.format_exc()
+                logger.warning('Error updating feed {url}: {e}'.format(
+                    url=self.feed.url,
+                    e=e,
+                ))
+                self.state = 'Failed'
+                self.db_session.rollback()
+
+class FeedUpdateBatch(object):
+    feed_entries = scales.SumAggregationStat('feed_entries')
+    new_entries = scales.SumAggregationStat('new_entries')
+    state = scales.HistogramAggregationStat('state')
+    thumbnail_from_content = scales.SumAggregationStat('thumbnail_from_content')
+    thumbnail_from_link = scales.SumAggregationStat('thumbnail_from_link')
+    thumbnail_from_summary = scales.SumAggregationStat('thumbnail_from_summary')
+    update_time = scales.PmfStat('update_time')
+
+    def __init__(self):
+        scales.init(self, '/feed_updates')
+
+    def update_feed(self, feed):
+        """Update a single feed."""
+        with db.session() as db_session:
+            u = FeedUpdater(db_session, feed)
+            u.do_update_feed()
+
+    def update_feeds(self, feed_list, sync):
+        if not sync:
+            with futures.ThreadPoolExecutor() as executor:
+                threads = [
+                    executor.submit(self.update_feed, feed)
+                    for feed in feed_list
+                ]
+                futures.wait(threads)
+        else:
+            for feed in feed_list:
+                self.update_feed(feed)
+
+    def log_stats(self):
+        logger.info('Items processed: {c}'.format(c=self.feed_entries))
+        logger.info('New items found: {c}'.format(c=self.new_entries))
+        events.log_stats()
+
 
 def do_update_feed(db_session, feed):
-    if feed.last_status == 410:
-        logger.info('Skipping feed %s because it is HTTP_GONE' % feed.url)
-        return None
-    else:
-        history = db.load_history_set(db_session, feed)
-        update = get_feed_update(feed, history)
-        apply_feed_update(db_session, feed, update)
-        db_session.add(feed)
-        return update
+    u = FeedUpdater(db_session, feed)
+    u.do_update_feed()
 
-def update_feed(feed):
-    """Update a single feed."""
-    with db.session() as db_session:
-        try:
-            update = do_update_feed(db_session, feed)
-            db_session.commit()
-
-            logger.info('Successfully updated feed {url}'.format(url=feed.url))
-            return (feed, update, None)
-        except:
-            e = traceback.format_exc()
-            logger.warning('Error updating feed {url}: {e}'.format(
-                url=feed.url,
-                e=e,
-            ))
-            db_session.rollback()
-            return (feed, None, e)
 
 #######################################
 
-def log_update_summary(feeds, elapsed_time, results):
-    logger.info(
-        'Updated {count} feeds in {time:.3} seconds ({fps:.2} feeds/sec)'.format(
-            count=len(feeds),
-            time=elapsed_time,
-            fps=len(feeds)/elapsed_time,
-        )
-    )
-
-    new_feeds = []
-    error_feeds = []
-
-    for feed, update, error in results:
-        if update is not None and len(update.feed.entries) > 0:
-            new_feeds.append('Feed {url} has {count} new entries'.format(
-                url=feed.url,
-                count=len(update.feed.entries),
-            ))
-        if error is not None:
-            error_feeds.append('Feed {url} had error: {error}'.format(
-                url=feed.url,
-                error=error
-            ))
-    for ef in error_feeds:
-        logger.info(ef)
-    for nf in new_feeds:
-        logger.info(nf)
-
 def update_feeds_cmd(args):
     """Update all of the subscribed feeds."""
-    start_time = perf_counter()
     with db.session() as db_session:
         if args.all:
             feeds = db.load_all_feeds(db_session)
         else:
             feeds = [ db.load_feed_by_url(db_session, args.url) ]
 
-    if not args.sync:
-        with futures.ThreadPoolExecutor() as executor:
-            threads = [ executor.submit(update_feed, feed) for feed in feeds ]
-            r = futures.wait(threads)
-            results = [ f.result() for f in r.done ]
-    else:
-        results = [update_feed(feed) for feed in feeds]
+    batch = FeedUpdateBatch()
+    batch.update_feeds(feeds, args.sync)
+    batch.log_stats()
 
-    end_time = perf_counter()
-    elapsed_time = end_time - start_time
-    log_update_summary(feeds, elapsed_time, results)
 
 def reset_feeds_cmd(args):
     """Reset cached state of all of the subscribed feeds."""

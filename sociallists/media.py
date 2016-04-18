@@ -6,7 +6,7 @@ import urllib.parse
 
 from bs4 import BeautifulSoup
 from PIL import Image, ImageFile
-from sociallists import db, http_util
+from sociallists import db, events, http_util
 
 logger = logging.getLogger('sociallists.feed')
 
@@ -67,7 +67,9 @@ def get_html_image(url, html_string, size, http_session=None):
         return None
 
 def _fetch_url(url, http_session, referer=None):
-    """Fetch data from the specified URL, return (url, content-type, data) tuple."""
+    """Fetch data from the specified URL and return (url, content-type, data)
+    tuple.
+    """
     response = http_session.get(url, headers={'Referer': referer})
     result = (response.url, response.headers['Content-Type'], response.content)
     logger.info('{url} Fetched {r_url}, {content_type}, {length} bytes'.format(
@@ -136,9 +138,33 @@ def _prepare_image(image_data, size):
     image.thumbnail(size, Image.ANTIALIAS)
     return image
 
+def _extract_open_graph_url(url, soup):
+    """Extract the thumbnail URL using the Open Graph protocol (http://ogp.me/)
+    """
+    og_image = (soup.find('meta', property='og:image') or
+                soup.find('meta', attrs={'name': 'og:image'}))
+    if og_image and og_image.get('content'):
+        return og_image['content']
+
+    og_image = (soup.find('meta', property='og:image:url') or
+                soup.find('meta', attrs={'name': 'og:image:url'}))
+    if og_image and og_image.get('content'):
+        return og_image['content']
+
+    return None
+
 def _should_ignore_image_url(url):
+    if url.endswith('addgoogle2.gif'):
+        return True
+
     netloc = urllib.parse.urlparse(url)[1]
     if netloc.endswith('gravatar.com'):
+        return True
+    if netloc.endswith('googleadservices.com'):
+        return True
+    if netloc.endswith('doubleclick.net'):
+        return True
+    if netloc.endswith('amazon-adsystem.com'):
         return True
     return False
 
@@ -164,25 +190,15 @@ def _fetch_image_size(url, http_session, referer):
 
 def _find_thumbnail_url_from_soup(url, soup, http_session):
     """Find the thumbnail url given a beautiful soup."""
-    # Allow the content author to specify the thumbnail using the Open
-    # Graph protocol: http://ogp.me/
-    og_image = (soup.find('meta', property='og:image') or
-                soup.find('meta', attrs={'name': 'og:image'}))
-    if og_image and og_image.get('content'):
-        logger.info('{url} using opengraph image content URL (2)'.format(
-            url=url))
-        return og_image['content']
-    og_image = (soup.find('meta', property='og:image:url') or
-                soup.find('meta', attrs={'name': 'og:image:url'}))
-    if og_image and og_image.get('content'):
-        logger.info('{url} using opengraph image content URL (2)'.format(
-            url=url))
-        return og_image['content']
+    thumbnail_url = _extract_open_graph_url(url, soup)
+    if thumbnail_url is not None:
+        events.thumbnail_is_open_graph(url)
+        return thumbnail_url
 
     # <link rel="image_src" href="http://...">
     thumbnail_spec = soup.find('link', rel='image_src')
     if thumbnail_spec and thumbnail_spec['href']:
-        logger.info('{url} using thumbnail link rel'.format(url=url))
+        events.thumbnail_is_link_rel(url)
         return thumbnail_spec['href']
 
     # ok, we have no guidance from the author. look for the largest
@@ -191,11 +207,11 @@ def _find_thumbnail_url_from_soup(url, soup, http_session):
     max_area = 0
     max_url = None
     for image_url in _extract_image_urls(url, soup):
-        logger.info('{url} Considering {image_url}'.format(
+        logger.debug('{url} Considering {image_url}'.format(
             url=url, image_url=image_url))
         size = _fetch_image_size(image_url, http_session, referer=url)
         if not size:
-            logger.info('{url} {image_url} has no size'.format(
+            logger.debug('{url} {image_url} has no size'.format(
                 url=url, image_url=image_url))
             continue
 
@@ -203,13 +219,13 @@ def _find_thumbnail_url_from_soup(url, soup, http_session):
 
         # ignore little images
         if area < 5000:
-            logger.info('{url} {image_url} is too small'.format(
+            logger.debug('{url} {image_url} is too small'.format(
                 url=url, image_url=image_url))
             continue
 
         # ignore excessively long/wide images
         if max(size) / min(size) > 1.5:
-            logger.info('{url} {image_url} is too oblong'.format(
+            logger.debug('{url} {image_url} is too oblong'.format(
                 url=url, image_url=image_url))
             continue
 
@@ -217,16 +233,19 @@ def _find_thumbnail_url_from_soup(url, soup, http_session):
         if 'sprite' in image_url.lower():
             area /= 10
 
-        logger.info('{url} {image_url} has area {area}'.format(
+        logger.debug('{url} {image_url} has area {area}'.format(
             url=url, image_url=image_url, area=area))
         if area > max_area:
             max_area = area
             max_url = image_url
 
+    if max_url is not None:
+        events.thumbnail_is_img_tag(url)
     return max_url
 
 def _find_thumbnail_image(url, http_session):
     """Find what we think is the best thumbnail image for a link.
+
     Returns a 2-tuple of image url and, as an optimization, the raw image
     data.  A value of None for the former means we couldn't find an image;
     None for the latter just means we haven't already fetched the image.
@@ -235,18 +254,15 @@ def _find_thumbnail_image(url, http_session):
 
     # if it's an image, it's pretty easy to guess what we should thumbnail.
     if content_type and "image" in content_type and content:
-        logger.info('{url} is an image'.format(url=url))
+        events.thumbnail_is_direct(url)
         return url, content
 
     if content_type and "html" in content_type and content:
-        # TODO: Investigate other parsers
-        logger.info('{url} is HTML'.format(url=url))
         soup = BeautifulSoup(content, _BEAUTIFUL_PARSER)
-    else:
-        logger.info('{url} is an unsupported type'.format(url=url))
-        return None, None
+        return _find_thumbnail_url_from_soup(url, soup, http_session), None
 
-    return _find_thumbnail_url_from_soup(url, soup, http_session), None
+    events.thumbnail_is_not_supported(url)
+    return None, None
 
 if __name__=='__main__':
     logging.basicConfig(
