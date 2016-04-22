@@ -5,7 +5,7 @@ import { createStore, applyMiddleware } from 'redux'
 import thunkMiddleware from 'redux-thunk'
 
 // import { data } from './data'
-import { AppRoot } from './ui'
+import AppRoot from './components/approot'
 
 // Redux actions-- these are basically helper functions and records to carry
 // events into the reducer, below.
