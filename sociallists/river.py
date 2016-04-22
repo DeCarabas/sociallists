@@ -231,6 +231,26 @@ def add_river_and_feed(user, river_name, url):
 
         session.commit()
 
+def export_river(river, stream):
+    stream.write(
+        '<opml version="1.0">\n'
+        '  <head><title>{name} Feeds</title></head>\n'
+        '  <body>\n'
+        '{feeds}'
+        '  </body>\n'
+        '</opml>\n'.format(
+            name=river.name,
+            feeds=''.join(
+                '    <outline text="{title}" type="rss" xmlUrl="{url}" />\n'.format(
+                    title=feed.title,
+                    url=feed.url,
+                )
+                for feed in river.feeds
+            ),
+        )
+    )
+
+
 #######################################
 
 def add_feed_cmd(args):
@@ -261,10 +281,20 @@ def show_river_cmd(args):
 def import_opml_cmd(args):
     import listparser
     l = listparser.parse(args.file)
+
+    forced_rivers = []
+    if args.river:
+        forced_rivers = args.river.split(',')
+
     for item in l.feeds:
-        rivers = ['Main']
-        if len(item.categories) > 0:
-            rivers = [('/'.join(c for c in cats)) for cats in item.categories]
+        rivers = forced_rivers
+        if len(rivers) == 0:
+            rivers = ['Main']
+            if len(item.categories) > 0:
+                rivers = [
+                    ('/'.join(c for c in cats))
+                    for cats in item.categories
+                ]
         for river_name in rivers:
             print("Importing feed %s to river %s" % (
                 item.url,
@@ -272,29 +302,56 @@ def import_opml_cmd(args):
             ))
             add_river_and_feed(args.user, river_name, item.url)
 
+def remove_river_cmd(args):
+    with db.session() as session:
+        river = db.load_river_by_name(session, args.user, args.name)
+        print('River {river} contains the following:'.format(river=river.name))
+        for feed in river.feeds:
+            print(str(feed))
+        print('{count} feeds(s)'.format(
+            count=len(river.feeds),
+        ))
+        s = input('Are you sure you want to remove this river? (y/N) ')
+        if len(s) > 0 and (s[0] == 'y' or s[0] == 'Y'):
+            fname = '{name}.opml'.format(name=river.name)
+            print('Backing up river to {fname}...'.format(fname=fname))
+            with open(fname, mode='w', encoding='utf-8') as f:
+                export_river(river, f)
+            session.delete(river)
+            session.commit()
+
+
 if __name__=='__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description="sociallists river related commands")
-    parser.add_argument("-u", "--user", help="The user whose list we're modifying", required=True)
-
     sps = parser.add_subparsers(dest='cmd')
 
     cp = sps.add_parser('add', help="Add a feed to a user's river")
     cp.set_defaults(func=add_feed_cmd)
-    cp.add_argument('river', help="The name of the river to augment")
+    cp.add_argument("-u", "--user", help="The user whose list we're modifying", required=True)
+    cp.add_argument('river', help="The name of the river to create or modify")
     cp.add_argument('url', help="The URL to add to the DB")
 
     cp = sps.add_parser('import', help="Import an OPML file for a user")
     cp.set_defaults(func=import_opml_cmd)
+    cp.add_argument("-u", "--user", help="The user we're importing for", required=True)
+    cp.add_argument("-r", "--river", help="Force the river(s) we're importing to")
     cp.add_argument('file', help="The file to import")
 
     cp = sps.add_parser('list', help="List all the user's rivers", aliases=["ls"])
     cp.set_defaults(func=list_rivers_cmd)
+    cp.add_argument("-u", "--user", help="The user that owns the rivers to list", required=True)
 
     cp = sps.add_parser('show', help="Show the feeds in a particular river")
     cp.set_defaults(func=show_river_cmd)
+    cp.add_argument("-u", "--user", help="The user that owns the river to show", required=True)
     cp.add_argument('name', help="The river name to show", default=None)
+
+    cp = sps.add_parser('rm', help="Remove a river")
+    cp.set_defaults(func=remove_river_cmd)
+    cp.add_argument("-u", "--user", help="The user that owns the river to show", required=True)
+    cp.add_argument('name', help="The river name to remove", default=None)
 
     args = parser.parse_args()
     if args.cmd:
