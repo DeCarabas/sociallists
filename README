@@ -7,6 +7,24 @@
   >>> from sociallists import db
   >>> db.Base.metadata.create_all()
 
+# Some notes on asynchrony
+
+I spent some time trying to convert this codebase to asyncio so that feed
+updates can be SUPER PARALLEL. What I discovered is that if I do this the HTTP
+stack begins to misbehave and timeout and stuff, and I'm not entirely sure why.
+
+So aiohttp doesn't seem to be a good choice for me.
+
+Using coroutines but a fundamentally blocking HTTP stack (asyncio + requests)
+doesn't actually buy me anything because all my threads will be blocked on the
+same fixed number of HTTP requests anyway, so it will be a lot of complexity
+for absolutely no efficiency gain.
+
+(In addition, the async/await stuff is currently very ugly and the docs are
+complicated and I just like this one better for now. So we're sticking with
+the slow but useful. Rewriting the feed update process to be massively parallel
+is still something I want to do but it will have to wait.)
+
 # TODO:
 
 - On the add feed flow, do the following:
