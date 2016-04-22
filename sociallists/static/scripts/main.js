@@ -4,120 +4,15 @@ import { connect, Provider } from 'react-redux'
 import { createStore, applyMiddleware } from 'redux'
 import thunkMiddleware from 'redux-thunk'
 
+import {
+  RIVER_LIST_UPDATE_SUCCESS,
+  RIVER_UPDATE_SUCCESS,
+  refreshRiverList
+} from './actions'
+
+
 // import { data } from './data'
 import AppRoot from './components/approot'
-
-// Redux actions-- these are basically helper functions and records to carry
-// events into the reducer, below.
-//
-const RIVER_LIST_UPDATE_START = 'RIVER_LIST_UPDATE_START';
-function riverListUpdateStart() {
-  return {
-    type: RIVER_LIST_UPDATE_START,
-  };
-}
-
-const RIVER_LIST_UPDATE_SUCCESS = 'RIVER_LIST_UPDATE_SUCCESS';
-function riverListUpdateSuccess(response) {
-  return {
-    type: RIVER_LIST_UPDATE_SUCCESS,
-    response: response,
-  };
-}
-const RIVER_LIST_UPDATE_FAILED = 'RIVER_LIST_UPDATE_FAILED';
-function riverListUpdateFailed(error) {
-  return {
-    type: RIVER_LIST_UPDATE_FAILED,
-    error: error,
-  };
-}
-
-const RIVER_UPDATE_START = 'RIVER_UPDATE_START';
-function riverUpdateStart(index) {
-  return {
-    type: RIVER_UPDATE_START,
-    index: index,
-  };
-}
-
-const RIVER_UPDATE_SUCCESS = 'RIVER_UPDATE_SUCCESS';
-function riverUpdateSuccess(index, name, url, response) {
-  return {
-    type: RIVER_UPDATE_SUCCESS,
-    index: index,
-    name: name,
-    url: url,
-    response: response,
-  };
-}
-const RIVER_UPDATE_FAILED = 'RIVER_UPDATE_FAILED';
-function riverUpdateFailed(index, error) {
-  return {
-    type: RIVER_UPDATE_FAILED,
-    index: index,
-    error: error,
-  };
-}
-
-function refreshRiver(index, river_name, river_url) {
-  return function doRefreshRiver(dispatch) {
-    dispatch(riverUpdateStart(index));
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", river_url, true);
-    xhr.addEventListener("progress", (e) => {
-      console.log("Progress", river_name);
-      // TODO: Event for progress
-    });
-    xhr.addEventListener("load", (e) => {
-      console.log("Loaded the river", river_name);
-      const response = JSON.parse(xhr.responseText);
-      // TODO: Error handling
-      dispatch(riverUpdateSuccess(index, river_name, river_url, response));
-    });
-    xhr.addEventListener("error", (e) => {
-      console.log("Error", river_name);
-      dispatch(riverUpdateFailed(index, xhr.statusText));
-    });
-    xhr.addEventListener("abort", (e) => {
-      console.log("Aborted", river_name);
-      // TODO: Event for abort
-    });
-    xhr.send();
-    console.log('Started', river_name);
-  };
-}
-
-function refreshRiverList() {
-  return function doRefreshRiverList(dispatch) {
-    dispatch(riverListUpdateStart());
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "api/v1/river/doty", true);
-    xhr.addEventListener("progress", (e) => {
-      console.log("Progress loading the river list");
-      // TODO: Event for progress
-    });
-    xhr.addEventListener("load", (e) => {
-      console.log("Loaded the river list");
-      const response = JSON.parse(xhr.responseText);
-      console.log(response);
-
-      dispatch(riverListUpdateSuccess(response));
-      response.rivers.forEach((river, index) => {
-        dispatch(refreshRiver(index, river.name, river.url));
-      });
-    });
-    xhr.addEventListener("error", (e) => {
-      console.log("Error refreshing river list", xhr.statusText);
-      dispatch(riverListUpdateFailed(xhr.statusText));
-    });
-    xhr.addEventListener("abort", (e) => {
-      console.log("Aborted river list refresh");
-      // TODO: Event for abort
-    });
-    xhr.send();
-    console.log('Started refreshing river list');
-  };
-}
 
 // The redux reducer-- this is the core logic of the app that evolves the app
 // state in response to actions.
@@ -146,15 +41,17 @@ function state_river(state = {}, action) {
 }
 
 function migrateRiverList(old_river_list, new_river_list) {
-  let empty_updates = { updates: [] };
-  return new_river_list.map(nr => {
+  let def_river = { updates: [], show_add_box: false, };
+  let migrated_rivers = new_river_list.map(nr => {
     let old_river = old_river_list.find(or => or.name === nr.name);
     return {
       name: nr.name,
       url: nr.url,
-      updates: (old_river || empty_updates).updates,
+      updates: (old_river || def_river).updates,
+      show_add_box: (old_river || def_river).show_add_box,
     };
   });
+  return migrated_rivers;
 }
 
 function state_rivers(state = [], action) {
