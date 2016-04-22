@@ -43,12 +43,12 @@ function state_river(state = {}, action) {
 function migrateRiverList(old_river_list, new_river_list) {
   let def_river = { updates: [], show_add_box: false, };
   let migrated_rivers = new_river_list.map(nr => {
-    let old_river = old_river_list.find(or => or.name === nr.name);
+    let old_river = old_river_list.find(or => or.name === nr.name) || def_river;
     return {
       name: nr.name,
       url: nr.url,
-      updates: (old_river || def_river).updates,
-      show_add_box: (old_river || def_river).show_add_box,
+      updates: old_river.updates,
+      show_add_box: old_river.show_add_box,
     };
   });
   return migrated_rivers;
