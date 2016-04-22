@@ -10,24 +10,21 @@ import {
   refreshRiverList
 } from './actions'
 
-
 // import { data } from './data'
 import AppRoot from './components/approot'
 
 // The redux reducer-- this is the core logic of the app that evolves the app
 // state in response to actions.
-//
-// const default_state = {
-//   rivers: [
-//     {
-//       name: 'Main',
-//       updates: data.updatedFeeds.updatedFeed,
-//       url: '/api/v1/river/doty/Main',
-//     },
-//   ],
-// }
 
-function state_river(state = {}, action) {
+// The default state of a river object.
+const def_river = {
+  name: '(Untitled)',
+  updates: [],
+  show_add_box: false,
+  state: 'none',
+};
+
+function state_river(state = def_river, action) {
   switch(action.type) {
     case RIVER_UPDATE_SUCCESS:
       return Object.assign({}, state, {
@@ -40,24 +37,16 @@ function state_river(state = {}, action) {
   }
 }
 
-function migrateRiverList(old_river_list, new_river_list) {
-  let def_river = { updates: [], show_add_box: false, };
-  let migrated_rivers = new_river_list.map(nr => {
-    let old_river = old_river_list.find(or => or.name === nr.name) || def_river;
-    return {
-      name: nr.name,
-      url: nr.url,
-      updates: old_river.updates,
-      show_add_box: old_river.show_add_box,
-    };
-  });
-  return migrated_rivers;
-}
-
 function state_rivers(state = [], action) {
   switch(action.type) {
     case RIVER_LIST_UPDATE_SUCCESS:
-      return migrateRiverList(state, action.response.rivers);
+      return action.response.rivers.map(nr => {
+        let old_river = state.find(or => or.name === nr.name) || def_river;
+        return Object.assign({}, old_river, {
+          name: nr.name,
+          url: nr.url,
+        });
+      });
     case RIVER_UPDATE_SUCCESS:
       return [].concat(
         state.slice(0, action.index),
