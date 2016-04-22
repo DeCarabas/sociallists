@@ -7,29 +7,36 @@ import {
   RIVER_TITLE_FONT_SIZE,
 } from './style'
 
-const RiverRefreshButton = ({onClick}) => {
-  const style = {
-    fontSize: ICON_FONT_SIZE,
-    float: 'right',
-    paddingRight: COLUMNSPACER,
-    paddingTop: 8,
-    cursor: 'pointer',
-  }
+const button_style = {
+  fontSize: ICON_FONT_SIZE,
+  float: 'right',
+  paddingTop: 8,
+  paddingRight: COLUMNSPACER,
+  cursor: 'pointer',
+};
 
-  return <i className='fa fa-refresh' style={style} onClick={onClick} />
+const RiverAddButton = ({river, onClick}) => {
+  const icon = river.show_add_box ? 'fa-chevron-up' : 'fa-plus';
+  return <i className={'fa ' + icon} style={button_style} onClick={onClick} />
 }
 
-const RiverTitle = ({river, onRefresh}) => {
+const RiverRefreshButton = ({river, onClick}) => {
+  return <i className='fa fa-refresh' style={button_style} onClick={onClick} />
+}
+
+const RiverTitle = ({river, onAdd, onRefresh}) => {
   const divStyle = {
     backgroundColor: RIVER_TITLE_BACKGROUND_COLOR,
   }
   const style = {
     paddingLeft: COLUMNSPACER,
     fontSize: RIVER_TITLE_FONT_SIZE,
+    marginBottom: 0,
   }
 
   return <div style={divStyle}>
-    <RiverRefreshButton onClick={onRefresh} />
+    <RiverRefreshButton river={river} onClick={onRefresh} />
+    <RiverAddButton river={river} onClick={onAdd} />
     <h1 style={style}>{river.name}</h1>
   </div>;
 };

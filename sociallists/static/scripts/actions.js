@@ -1,5 +1,5 @@
 export const TOGGLE_ADD_FEED_BOX = 'TOGGLE_ADD_FEED_BOX';
-export function toggleAddFeedbox(index) {
+export function toggleAddFeedBox(index) {
   return {
     type: TOGGLE_ADD_FEED_BOX,
     index: index,
