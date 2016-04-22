@@ -2,6 +2,7 @@ import logging
 import time
 
 from sociallists import db, events, http_util, media
+from sociallists.feedfinder import find_feeds
 
 from datetime import datetime
 from email import utils
@@ -9,6 +10,15 @@ from html.parser import HTMLParser
 from itertools import count
 
 logger = logging.getLogger('sociallists.river')
+
+class NoFeedsException(Exception):
+    """Raised when no feeds could be found for the provided URL"""
+    def __init__(self, url, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.url = url
+
+    def __repr__(self):
+        return '<NoFeedsException (url={url})>'.format(url=self.url)
 
 def is_guid_link(guid, session=None):
     """Figure out if the given GUID appears to be a link to something."""
@@ -196,6 +206,17 @@ def aggregate_river(user, name):
 
 def add_river_and_feed(user, river_name, url):
     with db.session() as session:
+        feed_urls = find_feeds(url)
+        if len(feed_urls) == 0:
+            logger.error("Url {url} has no feeds".format(url=url))
+            raise NoFeedsException(url=url)
+
+        logger.info('Input url {url} maps to {feed_url}'.format(
+            url=url,
+            feed_url=feed_urls[0],
+        ))
+        url = feed_urls[0]
+
         feed = db.load_feed_by_url(session, url)
         if not feed:
             logger.info("Feed '{url}' not found in database. Adding.".format(
