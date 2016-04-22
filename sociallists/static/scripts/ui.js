@@ -55,7 +55,7 @@ export const RiverItemTitle = ({item}) => {
   });
   let titleText = item.title || item.pubDate;
   return (
-    <a style={style} href={ item.link }>
+    <a style={style} href={ item.link } target="_blank">
       { titleText }
     </a>
   );
@@ -80,7 +80,11 @@ export const RiverItemThumbnail = ({item}) => {
       imgstyle.width = FULL_IMAGE_WIDTH;
       imgstyle.height = FULL_IMAGE_WIDTH;
     }
-    return <img style={imgstyle} src={thumb.url} />;
+    return (
+      <a href={item.link} target="_blank">
+        <img style={imgstyle} src={thumb.url} />
+      </a>
+    );
   } else {
     return <span />;
   }
