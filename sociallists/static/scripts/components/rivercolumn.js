@@ -8,10 +8,11 @@ import {
 } from './style'
 import RiverTitle from './rivertitle'
 import RiverUpdates from './riverupdates'
+import { refreshRiver } from '../actions'
 
 // RiverColumn
 //
-const RiverColumnBase = ({rivers, index}) => {
+const RiverColumnBase = ({rivers, index, onRefresh}) => {
   let style = {
     width: COLUMNWIDTH,
     position: 'absolute',
@@ -26,7 +27,7 @@ const RiverColumnBase = ({rivers, index}) => {
   let river = rivers[index] || {};
   return (
     <div style={style}>
-      <RiverTitle river={river} />
+      <RiverTitle river={river} onRefresh={onRefresh(index, river)}/>
       <RiverUpdates river={river} />
     </div>
   );
@@ -40,7 +41,9 @@ const vrc_mapStateToProps = (state) => {
   };
 };
 const vrc_mapDispatchToProps = (dispatch) => {
-  return { };
+  return {
+    onRefresh: (i, r) => (() => dispatch(refreshRiver(i, r.name, r.url))),
+  };
 };
 
 const RiverColumn = connect(

@@ -31,6 +31,8 @@ export const ITEM_TITLE_FONT_SIZE = 18;
 export const TEXT_FONT_SIZE = 12;
 export const UPDATE_TITLE_FONT_SIZE = 12;
 
+export const ICON_FONT_SIZE = 18;
+
 // ---- Sizes
 
 export const COLUMNWIDTH = 350;
