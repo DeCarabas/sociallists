@@ -50,7 +50,7 @@ def post_river(user, id):
     with db.session() as session:
         f = db.load_feed_by_url(session, feed_url)
         if not f.next_item_id:
-            f.do_update_feed(session, f)
+            feed.do_update_feed(session, f)
             session.commit()
     return (json.dumps({'status': 'ok'}), 200)
 
