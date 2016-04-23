@@ -7,6 +7,7 @@ import {
   COLOR_VERY_LIGHT,
   COLOR_VERY_DARK,
 } from './style'
+import { addFeedToRiver, riverAddFeedUrlChanged } from '../actions'
 
 const AddFeedBoxTitle = () => {
   const style = {
@@ -15,7 +16,7 @@ const AddFeedBoxTitle = () => {
   return <div style={style}>Add A New Feed</div>;
 }
 
-const AddFeedBoxButton = () => {
+const AddFeedBoxButton = ({onClick}) => {
   const divStyle = {
     textAlign: 'right',
     marginTop: COLUMNSPACER,
@@ -27,17 +28,25 @@ const AddFeedBoxButton = () => {
     border: '2px solid ' + COLOR_VERY_DARK,
     cursor: 'pointer',
   }
-  return <div style={divStyle}><span style={style}>Add Feed</span></div>;
+  return <div style={divStyle}>
+    <span style={style} onClick={onClick}>Add Feed</span>
+  </div>;
 }
 
-const AddFeedBoxUrl = () => {
+const AddFeedBoxUrl = ({onChange}) => {
   const style = {
     width: '100%',
   }
-  return <div style={style}><input style={style} type="text" /></div>;
+  return <div style={style}>
+    <input
+      style={style}
+      type="text"
+      onChange={ (e) => onChange(e.target.value) }
+    />
+  </div>;
 }
 
-const AddFeedBox = () => {
+const AddFeedBoxBase = ({index, river, feedUrlChanged, addFeedToRiver}) => {
   const style = {
     backgroundColor: COLOR_VERY_LIGHT,
     zIndex: 3,
@@ -51,9 +60,23 @@ const AddFeedBox = () => {
 
   return <div style={style}>
     <AddFeedBoxTitle />
-    <AddFeedBoxUrl />
-    <AddFeedBoxButton />
+    <AddFeedBoxUrl onChange={(text) => feedUrlChanged(index, text)} />
+    <AddFeedBoxButton onClick={() => addFeedToRiver(index, river)} />
   </div>;
 }
+
+const mapStateToProps = (state) => {
+  return {
+  };
+};
+const mapDispatchToProps = (dispatch) => {
+  return {
+    'feedUrlChanged': (index, new_value) =>
+      dispatch(riverAddFeedUrlChanged(index, new_value)),
+    'addFeedToRiver': (index, river) => dispatch(addFeedToRiver(index, river)),
+  };
+};
+
+const AddFeedBox = connect(mapStateToProps, mapDispatchToProps)(AddFeedBoxBase);
 
 export default AddFeedBox;

@@ -251,6 +251,7 @@ def add_river_and_feed(user, river_name, url):
             river.feeds.append(feed)
 
         session.commit()
+    return url
 
 def export_river(river, stream):
     stream.write(

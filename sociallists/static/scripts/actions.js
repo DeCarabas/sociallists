@@ -6,6 +6,39 @@ export function toggleAddFeedBox(index) {
   }
 }
 
+export const RIVER_ADD_FEED_START = 'RIVER_ADD_FEED_START';
+export function riverAddFeedStart(index) {
+  return {
+    type: RIVER_ADD_FEED_START,
+    index: index,
+  }
+}
+
+export const RIVER_ADD_FEED_SUCCESS = 'RIVER_ADD_FEED_SUCCESS';
+export function riverAddFeedSuccess(index) {
+  return {
+    type: RIVER_ADD_FEED_SUCCESS,
+    index: index,
+  }
+}
+
+export const RIVER_ADD_FEED_FAILED = 'RIVER_ADD_FEED_FAILED';
+export function riverAddFeedFailed(index) {
+  return {
+    type: RIVER_ADD_FEED_FAILED,
+    index: index,
+  }
+}
+
+export const RIVER_ADD_FEED_URL_CHANGED = 'RIVER_ADD_FEED_URL_CHANGED';
+export function riverAddFeedUrlChanged(index, new_value) {
+  return {
+    type: RIVER_ADD_FEED_URL_CHANGED,
+    index: index,
+    new_value: new_value,
+  };
+}
+
 export const RIVER_LIST_UPDATE_START = 'RIVER_LIST_UPDATE_START';
 export function riverListUpdateStart() {
   return {
@@ -57,62 +90,76 @@ export function riverUpdateFailed(index, error) {
   };
 }
 
+function xhrAction(options) {
+  return function doXHR(dispatch) {
+    if (options.start) {
+      options.start(dispatch);
+    }
+    let xhr = new XMLHttpRequest();
+    xhr.open(options.verb || "GET", options.url, true);
+    if (options.progress) {
+      xhr.addEventListener("progress", () => options.progress(dispatch, xhr));
+    }
+    if (options.loaded_json) {
+      xhr.addEventListener("load", () => {
+        let result = JSON.parse(xhr.responseText);
+        options.loaded_json(dispatch, result, xhr);
+      });
+    }
+    if (options.loaded) {
+      xhr.addEventListener("load", () => options.loaded(dispatch, xhr));
+    }
+    if (options.error) {
+      xhr.addEventListener("error", () => options.error(dispatch, xhr));
+    }
+    if (options.abort) {
+      xhr.addEventListener("abort", () => options.aborted(dispatch, xhr));
+    }
+    if (options.msg) {
+      xhr.setRequestHeader("content-type", "application/json");
+      xhr.send(JSON.stringify(options.msg));
+    } else {
+      xhr.send();
+    }
+  }
+}
+
+export function addFeedToRiver(index, river) {
+  return xhrAction({
+    verb: 'POST', url: river.url,
+    msg: { 'url': river.url_add_value },
+    start: (dispatch) => dispatch(riverAddFeedStart(index)),
+    loaded: (dispatch, xhr) => {
+      dispatch(riverAddFeedSuccess(index));
+      dispatch(refreshRiver(index, river.name, river.url));
+    },
+    error: (dispatch, xhr) => {
+      dispatch(riverAddFeedFailed(index, xhr.statusText));
+    },
+  });
+}
+
 export function refreshRiver(index, river_name, river_url) {
-  return function doRefreshRiver(dispatch) {
-    dispatch(riverUpdateStart(index));
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", river_url, true);
-    xhr.addEventListener("progress", (e) => {
-      console.log("Progress", river_name);
-      // TODO: Event for progress
-    });
-    xhr.addEventListener("load", (e) => {
-      console.log("Loaded the river", river_name);
-      const response = JSON.parse(xhr.responseText);
-      // TODO: Error handling
-      dispatch(riverUpdateSuccess(index, river_name, river_url, response));
-    });
-    xhr.addEventListener("error", (e) => {
-      console.log("Error", river_name);
-      dispatch(riverUpdateFailed(index, xhr.statusText));
-    });
-    xhr.addEventListener("abort", (e) => {
-      console.log("Aborted", river_name);
-      // TODO: Event for abort
-    });
-    xhr.send();
-    console.log('Started', river_name);
-  };
+  return xhrAction({
+    url: river_url,
+    start: (dispatch) => dispatch(riverUpdateStart(index)),
+    loaded_json: (dispatch, result) =>
+      dispatch(riverUpdateSuccess(index, river_name, river_url, result)),
+    error: (dispatch, xhr) =>
+      dispatch(riverUpdateFailed(index, xhr.statusText)),
+  });
 }
 
 export function refreshRiverList() {
-  return function doRefreshRiverList(dispatch) {
-    dispatch(riverListUpdateStart());
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "api/v1/river/doty", true);
-    xhr.addEventListener("progress", (e) => {
-      console.log("Progress loading the river list");
-      // TODO: Event for progress
-    });
-    xhr.addEventListener("load", (e) => {
-      console.log("Loaded the river list");
-      const response = JSON.parse(xhr.responseText);
-      console.log(response);
-
-      dispatch(riverListUpdateSuccess(response));
-      response.rivers.forEach((river, index) => {
+  return xhrAction({
+    url: "api/v1/river/doty",
+    start: (dispatch) => dispatch(riverListUpdateStart()),
+    loaded_json: (dispatch, result) => {
+      dispatch(riverListUpdateSuccess(result));
+      result.rivers.forEach((river, index) => {
         dispatch(refreshRiver(index, river.name, river.url));
       });
-    });
-    xhr.addEventListener("error", (e) => {
-      console.log("Error refreshing river list", xhr.statusText);
-      dispatch(riverListUpdateFailed(xhr.statusText));
-    });
-    xhr.addEventListener("abort", (e) => {
-      console.log("Aborted river list refresh");
-      // TODO: Event for abort
-    });
-    xhr.send();
-    console.log('Started refreshing river list');
-  };
+    },
+    error: (dispatch, xhr) => dispatch(riverListUpdateFailed(xhr.statusText)),
+  });
 }

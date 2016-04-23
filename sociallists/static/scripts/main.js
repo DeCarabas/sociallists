@@ -6,6 +6,7 @@ import thunkMiddleware from 'redux-thunk'
 
 import {
   TOGGLE_ADD_FEED_BOX,
+  RIVER_ADD_FEED_URL_CHANGED,
   RIVER_LIST_UPDATE_SUCCESS,
   RIVER_UPDATE_SUCCESS,
   refreshRiverList
@@ -23,6 +24,7 @@ const def_river = {
   updates: [],
   show_add_box: false,
   state: 'none',
+  url_add_value: '',
 };
 
 function state_river(state = def_river, action) {
@@ -36,6 +38,10 @@ function state_river(state = def_river, action) {
     case TOGGLE_ADD_FEED_BOX:
       return Object.assign({}, state, {
         show_add_box: !state.show_add_box,
+      });
+    case RIVER_ADD_FEED_URL_CHANGED:
+      return Object.assign({}, state, {
+        url_add_value: action.new_value,
       });
     default:
       return state;
@@ -52,6 +58,7 @@ function state_rivers(state = [], action) {
           url: nr.url,
         });
       });
+    case RIVER_ADD_FEED_URL_CHANGED:
     case TOGGLE_ADD_FEED_BOX:
     case RIVER_UPDATE_SUCCESS:
       return [].concat(

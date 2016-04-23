@@ -32,7 +32,11 @@ const RiverColumnBase = ({rivers, index, onAdd, onRefresh}) => {
         onAdd={onAdd(index, river)}
         onRefresh={onRefresh(index, river)}
       />
-      { river.show_add_box ? <AddFeedBox /> : <span /> }
+      {
+        river.show_add_box ?
+          <AddFeedBox index={index} river={river} /> : 
+          <span />
+      }
       <RiverUpdates river={river} />
     </div>
   );

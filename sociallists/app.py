@@ -3,7 +3,7 @@ import json
 
 from flask import abort, Flask, g, render_template, request, url_for
 from sociallists.river import feed_to_river
-from sociallists import db, river
+from sociallists import db, feed, river
 
 app = Flask('sociallists')
 
@@ -20,7 +20,7 @@ def get_river_list(user):
             'rivers': [
                 {
                     'name':r.name,
-                    'url':url_for('get_river', user=user, id=r.name),
+                    'url':url_for('get_or_post_river', user=user, id=r.name),
                 }
                 for r in rivers
             ]
@@ -39,11 +39,27 @@ def rewrite_river(r):
                     del thumb['__blob']
     return r
 
-@app.route("/api/v1/river/<user>/<id>")
-def get_river(user,id):
+def get_river(user, id):
     r = rewrite_river(river.aggregate_river(user,id))
     result = json.dumps(r, indent=2, sort_keys=True)
     return (result, 200, {'content-type': 'application/json'})
+
+def post_river(user, id):
+    request_data = request.get_json(force=True)
+    feed_url = river.add_river_and_feed(user, id, request_data['url'])
+    with db.session() as session:
+        f = db.load_feed_by_url(session, feed_url)
+        if not f.next_item_id:
+            f.do_update_feed(session, f)
+            session.commit()
+    return (json.dumps({'status': 'ok'}), 200)
+
+@app.route("/api/v1/river/<user>/<id>", methods=['GET', 'POST'])
+def get_or_post_river(user,id):
+    if request.method == 'GET':
+        return get_river(user, id)
+    else:
+        return post_river(user, id)
 
 @app.route("/api/v1/river/<user>/<id>/public")
 def get_public_river(user,id):
