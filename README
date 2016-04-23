@@ -36,6 +36,7 @@ UI:
 
 Shipping:
 - Re-visit use of requirements and packages and vendoring and the like
+- Re-pack font awesome fonts
 
 Feed Stuff:
 - Extract enclosures and the like

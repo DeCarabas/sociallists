@@ -7,6 +7,7 @@ import {
   COLOR_VERY_DARK
 } from './style'
 import AddFeedBox from './addfeedbox'
+import RiverProgress from './riverprogress'
 import RiverTitle from './rivertitle'
 import RiverUpdates from './riverupdates'
 import { refreshRiver, toggleAddFeedBox } from '../actions'
@@ -34,7 +35,7 @@ const RiverColumnBase = ({rivers, index, onAdd, onRefresh}) => {
       />
       {
         river.show_add_box ?
-          <AddFeedBox index={index} river={river} /> : 
+          <AddFeedBox index={index} river={river} /> :
           <span />
       }
       <RiverUpdates river={river} />

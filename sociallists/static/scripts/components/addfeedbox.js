@@ -2,7 +2,6 @@ var React = require('react'); // N.B. Still need this because JSX.
 import { connect } from 'react-redux'
 import {
   COLUMNSPACER,
-  TOP_SPACE,
   COLOR_DARK,
   COLOR_VERY_LIGHT,
   COLOR_VERY_DARK,
@@ -51,7 +50,6 @@ const AddFeedBoxBase = ({index, river, feedUrlChanged, addFeedToRiver}) => {
     backgroundColor: COLOR_VERY_LIGHT,
     zIndex: 3,
     position: 'absolute',
-    top: TOP_SPACE,
     left: 0,
     right: 0,
     padding: COLUMNSPACER,

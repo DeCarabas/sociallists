@@ -17,6 +17,8 @@ export const DEFAULT_LINK_COLOR = COLOR_BLACK;
 export const RIVER_COLUMN_BACKGROUND_COLOR = COLOR_VERY_LIGHT_GREY;
 export const RIVER_TITLE_BACKGROUND_COLOR = COLOR_BASE;
 
+// ---- Fonts
+
 export const SANS_FONTS = [
   'AvenirNext-Medium',
   'HelveticaNeue-Medium',
@@ -38,6 +40,7 @@ export const ICON_FONT_SIZE = 18;
 export const COLUMNWIDTH = 350;
 export const FULL_IMAGE_WIDTH = 300;
 export const COLUMNSPACER = 10;
+export const PROGRESS_HEIGHT = 10;
 
 // ---- Default Styles
 
