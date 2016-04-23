@@ -13,7 +13,7 @@ import RiverUpdates from './riverupdates'
 import { refreshRiver, toggleAddFeedBox } from '../actions'
 
 const RiverColumnBase = ({rivers, index, onAdd, onRefresh}) => {
-  let style = {
+  const style = {
     width: COLUMNWIDTH,
     position: 'absolute',
     top: COLUMNSPACER,
@@ -24,7 +24,7 @@ const RiverColumnBase = ({rivers, index, onAdd, onRefresh}) => {
     border: '1px solid ' + COLOR_VERY_DARK,
   };
 
-  let river = rivers[index] || {};
+  const river = rivers[index] || {};
 
   return (
     <div style={style}>
@@ -33,11 +33,12 @@ const RiverColumnBase = ({rivers, index, onAdd, onRefresh}) => {
         onAdd={onAdd(index, river)}
         onRefresh={onRefresh(index, river)}
       />
-      {
-        river.show_add_box ?
-          <AddFeedBox index={index} river={river} /> :
-          <span />
-      }
+      {(river.loading
+          ? <RiverProgress percent={1} />
+          : <span />)}
+      {(river.show_add_box
+          ? <AddFeedBox index={index} river={river} />
+          : <span />)}
       <RiverUpdates river={river} />
     </div>
   );
