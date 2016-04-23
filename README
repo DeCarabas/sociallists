@@ -27,10 +27,18 @@ is still something I want to do but it will have to wait.)
 
 # TODO:
 
-- On the add feed flow, do the following:
-  1. Automatically refresh feed for the first time if no refresh has been done
-- Extract enclosures and the like
+UI:
+- Fill out the More box in the UI to expand things
+- Disable images in feeds as an option.
+- Different river layouts (normal, big images, all images...)
+- Progress bars
+- Error boxes
+
+Shipping:
 - Re-visit use of requirements and packages and vendoring and the like
+
+Feed Stuff:
+- Extract enclosures and the like
 - Put river items in the DB so that we can efficiently re-run the processing
   steps for items that are out of the feed
 - For the future, we'll probably need options on individual feeds for
@@ -39,5 +47,3 @@ is still something I want to do but it will have to wait.)
 - Implement ATOM cache timeout and RSS skip hours and the like to poll more
   intelligently.
 - Implement pubsubhubbub
-- Fill out the More box in the UI to expand things
-- Disable images in feeds as an option.
