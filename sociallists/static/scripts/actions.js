@@ -125,9 +125,10 @@ function xhrAction(options) {
 }
 
 export function addFeedToRiver(index, river) {
+  console.log("addFeedToRiver", index, river);
   return xhrAction({
     verb: 'POST', url: river.url,
-    msg: { 'url': river.url_add_value },
+    msg: { 'url': river.modal.value },
     start: (dispatch) => dispatch(riverAddFeedStart(index)),
     loaded: (dispatch, xhr) => {
       dispatch(riverAddFeedSuccess(index));

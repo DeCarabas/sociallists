@@ -25,88 +25,56 @@ import AppRoot from './components/approot'
 
 // The default state of a river object.
 const def_river = {
-  loading: false,
+  modal: { kind: 'none', },
   name: '(Untitled)',
   updates: [],
-  show_add_box: false,
-  state: 'none',
-  url_add_value: '',
+  url: '',
 };
 
-function state_river_loading(state = false, action) {
-  switch(action.type)
-  {
+function state_river(state = def_river, action) {
+  switch(action.type) {
     case RIVER_ADD_FEED_START:
     case RIVER_UPDATE_START:
-      return true;
-
+      return Object.assign({}, state, {
+        modal: { kind: 'loading', percent: 1 },
+      });
     case RIVER_ADD_FEED_SUCCESS:
+      return Object.assign({}, state, {
+        modal: { kind: 'none', },
+      });
     case RIVER_ADD_FEED_FAILED:
-    case RIVER_UPDATE_SUCCESS:
     case RIVER_UPDATE_FAILED:
-      return false;
-
-    default:
-      return state;
-  }
-}
-
-function state_river_name(state = '', action) {
-  switch(action.type)
-  {
-    case RIVER_UPDATE_SUCCESS: return action.name;
-    default:                   return state;
-  }
-}
-
-function state_river_url(state = '', action) {
-  switch(action.type)
-  {
-    case RIVER_UPDATE_SUCCESS: return action.url;
-    default:                   return state;
-  }
-}
-
-function state_river_show_add_box(state = false, action)
-{
-  switch(action.type)
-  {
-    case RIVER_ADD_FEED_START: return false;
-    case TOGGLE_ADD_FEED_BOX:  return !state;
-    default:                   return state;
-  }
-}
-
-function state_river_url_add_value(state = '', action)
-{
-  switch(action.type)
-  {
-    case RIVER_ADD_FEED_START:       return '';
-    case RIVER_ADD_FEED_URL_CHANGED: return action.new_value;
-    case TOGGLE_ADD_FEED_BOX:        return '';
-    default: return state;
-  }
-}
-
-function state_river_updates(state = [], action) {
-  switch(action.type)
-  {
+      return Object.assign({}, state, {
+        modal: { kind: 'error', error: action.error, },
+      });
     case RIVER_UPDATE_SUCCESS:
-      return action.response.updatedFeeds.updatedFeed;
+      return Object.assign({}, state, {
+        modal: { kind: 'none', },
+        name: action.name,
+        updates: action.response.updatedFeeds.updatedFeed,
+        url: action.url,
+      });
+    case RIVER_ADD_FEED_URL_CHANGED:
+      if (state.modal && state.modal.kind === 'add_feed') {
+        return Object.assign({}, state, {
+          modal: { kind: 'add_feed', value: action.new_value },
+        });
+      } else {
+        return state;
+      }
+    case TOGGLE_ADD_FEED_BOX:
+      if (state.modal && state.modal.kind === 'add_feed') {
+        return Object.assign({}, state, {
+          modal: { kind: 'none', },
+        });
+      } else {
+        return Object.assign({}, state, {
+          modal: { kind: 'add_feed', value: '', }
+        });
+      }
     default:
       return state;
   }
-}
-
-function state_river(state = def_river, action) {
-  return Object.assign({}, state, {
-    loading:       state_river_loading(state.loading, action),
-    name:          state_river_name(state.name, action),
-    show_add_box:  state_river_show_add_box(state.show_add_box, action),
-    updates:       state_river_updates(state.updates, action),
-    url:           state_river_url(state.url, action),
-    url_add_value: state_river_url_add_value(state.url_add_value, action),
-  });
 }
 
 function state_rivers(state = [], action) {
@@ -119,7 +87,6 @@ function state_rivers(state = [], action) {
           url: nr.url,
         });
       });
-    case RIVER_ADD_FEED_URL_CHANGED:
     case TOGGLE_ADD_FEED_BOX:
     case RIVER_UPDATE_START:
     case RIVER_UPDATE_FAILED:
@@ -127,6 +94,7 @@ function state_rivers(state = [], action) {
     case RIVER_ADD_FEED_START:
     case RIVER_ADD_FEED_FAILED:
     case RIVER_ADD_FEED_SUCCESS:
+    case RIVER_ADD_FEED_URL_CHANGED:
       return [].concat(
         state.slice(0, action.index),
         state_river(state[action.index], action),

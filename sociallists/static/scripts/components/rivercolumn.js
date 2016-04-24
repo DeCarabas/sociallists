@@ -12,6 +12,15 @@ import RiverTitle from './rivertitle'
 import RiverUpdates from './riverupdates'
 import { refreshRiver, toggleAddFeedBox } from '../actions'
 
+function modalForRiver(river, index) {
+  const modal = river.modal || {};
+  switch (modal.kind) {
+    case 'loading': return <RiverProgress percent={modal.percent} />;
+    case 'add_feed': return <AddFeedBox river={river} index={index} />;
+    default: return <span />;
+  }
+}
+
 const RiverColumnBase = ({rivers, index, onAdd, onRefresh}) => {
   const style = {
     width: COLUMNWIDTH,
@@ -25,7 +34,7 @@ const RiverColumnBase = ({rivers, index, onAdd, onRefresh}) => {
   };
 
   const river = rivers[index] || {};
-
+  const modal = modalForRiver(river, index);
   return (
     <div style={style}>
       <RiverTitle
@@ -33,12 +42,7 @@ const RiverColumnBase = ({rivers, index, onAdd, onRefresh}) => {
         onAdd={onAdd(index, river)}
         onRefresh={onRefresh(index, river)}
       />
-      {(river.loading
-          ? <RiverProgress percent={1} />
-          : <span />)}
-      {(river.show_add_box
-          ? <AddFeedBox index={index} river={river} />
-          : <span />)}
+      {modal}
       <RiverUpdates river={river} />
     </div>
   );
