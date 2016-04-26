@@ -32,13 +32,22 @@ UI:
 - Disable images in feeds as an option.
 - Different river layouts (normal, big images, all images...)
 - Error boxes
+- Enable jumping between refresh sessions:
+  - Mark the top refresh session on all rivers when we start a refresh.
+  - Put navigation buttons in the boundaries between refreshes that jump up
+    and down. (i.e., build a meta-FeedUpdate construct that is "refresh
+    session"; it will be river-specific. This might be complex.)
+- Top "title bar"
+- Refresh button in title bar, remove per-river refresh (dumb)
 
 Shipping:
 - Re-visit use of requirements and packages and vendoring and the like
 - Re-pack font awesome fonts
+- Figure out how to pivot to a client-side app
 
 Feed Stuff:
-- Extract enclosures and the like
+- Extract enclosures and the like, store locally (in the DB) and present them
+  in the river. (Then do UI work to expose audio enclosures and the like.)
 - Put river items in the DB so that we can efficiently re-run the processing
   steps for items that are out of the feed
 - For the future, we'll probably need options on individual feeds for
@@ -47,3 +56,6 @@ Feed Stuff:
 - Implement ATOM cache timeout and RSS skip hours and the like to poll more
   intelligently.
 - Implement pubsubhubbub
+- Convert to sqlite as part of moving to a self-contained app
+  - Alternately, provide a compat layer for sqllite. Maybe SQLAlchemy already
+    gives me everything I need?
