@@ -5,19 +5,12 @@ import {
   ICON_FONT_SIZE,
   RIVER_TITLE_BACKGROUND_COLOR,
   RIVER_TITLE_FONT_SIZE,
+  BUTTON_STYLE,
 } from './style'
-
-const button_style = {
-  fontSize: ICON_FONT_SIZE,
-  float: 'right',
-  paddingTop: 8,
-  paddingRight: COLUMNSPACER,
-  cursor: 'pointer',
-};
 
 const RiverAddButton = ({river, onClick}) => {
   const icon = river.show_add_box ? 'fa-chevron-up' : 'fa-plus';
-  return <i className={'fa ' + icon} style={button_style} onClick={onClick} />
+  return <i className={'fa ' + icon} style={BUTTON_STYLE} onClick={onClick} />
 }
 
 const RiverTitle = ({river, onAdd}) => {

@@ -48,3 +48,11 @@ export const DEFAULT_LINK_STYLE = {
   color: DEFAULT_LINK_COLOR,
   textDecoration: 'initial',
 };
+
+export const BUTTON_STYLE = {
+  fontSize: ICON_FONT_SIZE,
+  float: 'right',
+  paddingTop: 8,
+  paddingRight: COLUMNSPACER,
+  cursor: 'pointer',
+};
