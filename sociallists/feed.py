@@ -1,6 +1,7 @@
 import feedparser
 import io
 import logging
+import threading
 import traceback
 
 from collections import namedtuple
@@ -265,23 +266,27 @@ class FeedUpdateBatch(object):
     def __init__(self):
         scales.init(self, '/feed_updates')
 
-    def update_feed(self, feed):
+    def update_feed(self, feed, done_callback):
         """Update a single feed."""
-        with db.session() as db_session:
-            u = FeedUpdater(db_session, feed)
-            u.do_update_feed()
+        try:
+            with db.session() as db_session:
+                u = FeedUpdater(db_session, feed)
+                u.do_update_feed()
+        finally:
+            if done_callback:
+                done_callback(feed)
 
-    def update_feeds(self, feed_list, sync):
+    def update_feeds(self, feed_list, sync, done_callback=None):
         if not sync:
             with futures.ThreadPoolExecutor() as executor:
                 threads = [
-                    executor.submit(self.update_feed, feed)
+                    executor.submit(self.update_feed, feed, done_callback)
                     for feed in feed_list
                 ]
                 futures.wait(threads)
         else:
             for feed in feed_list:
-                self.update_feed(feed)
+                self.update_feed(feed, done_callback)
 
     def log_stats(self):
         logger.info('Items processed: {c}'.format(c=self.feed_entries))
@@ -304,8 +309,23 @@ def update_feeds_cmd(args):
         else:
             feeds = [ db.load_feed_by_url(db_session, args.url) ]
 
+    done = 0
+    def feed_done(feed):
+        try:
+            nonlocal done
+            done = done + 1
+            pct = int(100 * done / len(feeds))
+            print(
+                '\r{percent}% complete'.format(percent=pct),
+                end='',
+                flush=True,
+            )
+        except:
+            print(traceback.format_exc())
+
     batch = FeedUpdateBatch()
-    batch.update_feeds(feeds, args.sync)
+    batch.update_feeds(feeds, args.sync, feed_done)
+    print()
     batch.log_stats()
 
 
@@ -352,30 +372,35 @@ if __name__=='__main__':
     cp = sps.add_parser('update', help='Update one or all feeds')
     cp.set_defaults(func=update_feeds_cmd)
     cp.add_argument("--sync", help="Update the feeds asynchronously", action="store_true")
+    cp.add_argument("-v", "--verbose", help="Show verbose logging", action="store_true")
     g = cp.add_mutually_exclusive_group(required=True)
     g.add_argument("-a", "--all", help="Update all feeds", action="store_true")
     g.add_argument("-u", "--url", help="Update the specified URL")
 
     cp = sps.add_parser('reset', help='Reset one or all feeds')
     cp.set_defaults(func=reset_feeds_cmd)
+    cp.add_argument("-v", "--verbose", help="Show verbose logging", action="store_true")
     g = cp.add_mutually_exclusive_group(required=True)
     g.add_argument("-a", "--all", help="Reset all feeds", action="store_true")
     g.add_argument("-u", "--url", help="Reset a single URL")
 
     cp = sps.add_parser('add', help='Add a feed to the DB')
     cp.set_defaults(func=add_feed_cmd)
+    cp.add_argument("-v", "--verbose", help="Show verbose logging", action="store_true")
     cp.add_argument('url', help="The URL to add to the DB")
 
     cp = sps.add_parser('list', help='List all feeds in the DB', aliases=["ls"])
     cp.set_defaults(func=list_feeds_cmd)
+    cp.add_argument("-v", "--verbose", help="Show verbose logging", action="store_true")
 
     args = parser.parse_args()
     if args.cmd:
-        level = logging.INFO
-        logging.basicConfig(
-            format='%(asctime)s %(message)s',
-            level=level,
-        )
+        if args.verbose:
+            level = logging.INFO
+            logging.basicConfig(
+                format='%(asctime)s %(message)s',
+                level=level,
+            )
         args.func(args)
     else:
         parser.print_usage()
