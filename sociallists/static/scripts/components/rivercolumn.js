@@ -25,7 +25,7 @@ const RiverColumnBase = ({rivers, index, onAdd}) => {
   const style = {
     width: COLUMNWIDTH,
     position: 'absolute',
-    top: COLUMNSPACER,
+    top: COLUMNSPACER * 4,
     left: index * (COLUMNWIDTH + COLUMNSPACER) + COLUMNSPACER,
     backgroundColor: RIVER_COLUMN_BACKGROUND_COLOR,
     bottom: COLUMNSPACER,
