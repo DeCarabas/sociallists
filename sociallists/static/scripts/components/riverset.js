@@ -11,9 +11,7 @@ import RiverColumn from './rivercolumn'
 
 const RiverSetBar = ({title}) => {
   const div_style = {
-    position: 'fixed',
     backgroundColor: RIVER_TITLE_BACKGROUND_COLOR,
-    top: 0, left: 0, width: '100%',
   };
   const head_style = {
     fontSize: RIVER_TITLE_FONT_SIZE,
@@ -41,20 +39,37 @@ export const RiverSetBase = ({rivers}) => {
     position: 'relative',
     height: '100%',
   };
-  const inner_style = {
+  const top_bar_style = {
+    position: 'fixed',
+    top: 0, left: 0, width: '100%',
+  };
+  const column_set_style = {
     padding: 10,
     position: 'relative',
     width: TOTAL_SPACING + TOTAL_COLUMNS,
     height: '100%',
   };
+  const column_style = {
+    width: COLUMNWIDTH,
+    position: 'absolute',
+    top: COLUMNSPACER * 4,
+    bottom: COLUMNSPACER,
+  };
   return (
     <div style={style}>
-      <RiverSetBar key='riverbar' title='Rivers' />
-      <div style={inner_style}>
+      <div style={top_bar_style}>
+        <RiverSetBar key='riverbar' title='Rivers' />
+      </div>
+      <div style={column_set_style}>
       {
-        rivers.map((r, index) =>
-          <RiverColumn key={r.name} index={index} />
-        )
+        rivers.map((r, index) => {
+          const c_style = Object.assign({}, column_style, {
+            left: index * (COLUMNWIDTH + COLUMNSPACER) + COLUMNSPACER,
+          });
+          return <div style={c_style}>
+            <RiverColumn key={r.name} index={index} />
+          </div>
+        })
       }
       </div>
     </div>

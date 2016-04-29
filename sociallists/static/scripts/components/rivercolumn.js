@@ -23,14 +23,11 @@ function modalForRiver(river, index) {
 
 const RiverColumnBase = ({rivers, index, onAdd}) => {
   const style = {
-    width: COLUMNWIDTH,
-    position: 'absolute',
-    top: COLUMNSPACER * 4,
-    left: index * (COLUMNWIDTH + COLUMNSPACER) + COLUMNSPACER,
     backgroundColor: RIVER_COLUMN_BACKGROUND_COLOR,
-    bottom: COLUMNSPACER,
     borderRadius: 10,
     border: '1px solid ' + COLOR_VERY_DARK,
+    height: '100%',
+    width: '100%',
   };
 
   const river = rivers[index] || {};
