@@ -72,9 +72,9 @@ def store_item_thumbnail(item):
         image = thumbnail.get('__image')
         if image is not None:
             bio = io.BytesIO()
-            image.convert('RGB').save(bio, 'jpeg')
+            image.save(bio, 'png')
             with db.session() as db_session:
-                blob = db.store_blob(db_session, 'image/jpeg', bio.getbuffer())
+                blob = db.store_blob(db_session, 'image/png', bio.getbuffer())
                 hash = blob.hash
                 db_session.commit()
 
