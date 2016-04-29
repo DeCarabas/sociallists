@@ -21,7 +21,7 @@ function modalForRiver(river, index) {
   }
 }
 
-const RiverColumnBase = ({rivers, index, onAdd, onRefresh}) => {
+const RiverColumnBase = ({rivers, index, onAdd}) => {
   const style = {
     width: COLUMNWIDTH,
     position: 'absolute',
@@ -40,7 +40,6 @@ const RiverColumnBase = ({rivers, index, onAdd, onRefresh}) => {
       <RiverTitle
         river={river}
         onAdd={onAdd(index, river)}
-        onRefresh={onRefresh(index, river)}
       />
       {modal}
       <RiverUpdates river={river} />
@@ -58,7 +57,6 @@ const vrc_mapStateToProps = (state) => {
 const vrc_mapDispatchToProps = (dispatch) => {
   return {
     onAdd: (i, r) => (() => dispatch(toggleAddFeedBox(i))),
-    onRefresh: (i, r) => (() => dispatch(refreshRiver(i, r.name, r.url))),
   };
 };
 

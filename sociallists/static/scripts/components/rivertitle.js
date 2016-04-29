@@ -20,11 +20,7 @@ const RiverAddButton = ({river, onClick}) => {
   return <i className={'fa ' + icon} style={button_style} onClick={onClick} />
 }
 
-const RiverRefreshButton = ({river, onClick}) => {
-  return <i className='fa fa-refresh' style={button_style} onClick={onClick} />
-}
-
-const RiverTitle = ({river, onAdd, onRefresh}) => {
+const RiverTitle = ({river, onAdd}) => {
   const divStyle = {
     backgroundColor: RIVER_TITLE_BACKGROUND_COLOR,
   }
@@ -35,7 +31,6 @@ const RiverTitle = ({river, onAdd, onRefresh}) => {
   }
 
   return <div style={divStyle}>
-    <RiverRefreshButton river={river} onClick={onRefresh} />
     <RiverAddButton river={river} onClick={onAdd} />
     <h1 style={style}>{river.name}</h1>
   </div>;
