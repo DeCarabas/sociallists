@@ -57,17 +57,17 @@ export const RiverSetBase = ({rivers}) => {
   };
   return (
     <div style={style}>
-      <div style={top_bar_style}>
-        <RiverSetBar key='riverbar' title='Rivers' />
+      <div key='river_set_bar' style={top_bar_style}>
+        <RiverSetBar title='Rivers' />
       </div>
-      <div style={column_set_style}>
+      <div key='river_set' style={column_set_style}>
       {
         rivers.map((r, index) => {
           const c_style = Object.assign({}, column_style, {
             left: index * (COLUMNWIDTH + COLUMNSPACER) + COLUMNSPACER,
           });
-          return <div style={c_style}>
-            <RiverColumn key={r.name} index={index} />
+          return <div style={c_style} key={r.name}>
+            <RiverColumn index={index} />
           </div>
         })
       }
