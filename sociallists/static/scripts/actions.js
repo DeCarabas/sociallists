@@ -90,12 +90,43 @@ export function riverUpdateFailed(index, error) {
   };
 }
 
+export const REFRESH_ALL_FEEDS_START = 'REFRESH_ALL_FEEDS_START';
+export function refreshAllFeedsStart() {
+  return {
+    type: REFRESH_ALL_FEEDS_START,
+  };
+}
+
+export const REFRESH_ALL_FEEDS_PROGRESS = 'REFRESH_ALL_FEEDS_PROGRESS';
+export function refreshAllFeedsProgress(percent) {
+  return {
+    type: REFRESH_ALL_FEEDS_PROGRESS,
+    percent: percent,
+  };
+}
+
+export const REFRESH_ALL_FEEDS_SUCCESS = 'REFRESH_ALL_FEEDS_SUCCESS';
+export function refreshAllFeedsSuccess() {
+  return {
+    type: REFRESH_ALL_FEEDS_SUCCESS,
+  };
+}
+
+export const REFRESH_ALL_FEEDS_ERROR = 'REFRESH_ALL_FEEDS_ERROR';
+export function refreshAllFeedsError(error) {
+  console.log('error')
+  return {
+    type: REFRESH_ALL_FEEDS_ERROR,
+    error: error,
+  };
+}
+
 function xhrAction(options) {
   return function doXHR(dispatch) {
-    if (options.start) {
-      options.start(dispatch);
-    }
     let xhr = new XMLHttpRequest();
+    if (options.start) {
+      options.start(dispatch, xhr);
+    }
     xhr.open(options.verb || "GET", options.url, true);
     if (options.progress) {
       xhr.addEventListener("progress", () => options.progress(dispatch, xhr));
@@ -163,4 +194,42 @@ export function refreshRiverList() {
     },
     error: (dispatch, xhr) => dispatch(riverListUpdateFailed(xhr.statusText)),
   });
+}
+
+export function refreshAllFeeds() {
+  let pollTimer = null;
+
+  return xhrAction({
+    verb: "POST", url: "api/v1/river/doty/refresh_all",
+    start: (dispatch, xhr) => {
+      pollTimer = setInterval(() => {
+        let text = xhr.responseText;
+        if (text) {
+          let lines = text.split('\n');
+          let part = lines[lines.length - 1];
+          if (part.length === 0 && lines.length > 1) {
+            part = lines[lines.length - 2];
+          }
+          if (part.length > 0) {
+            let percent = parseInt(part, '10');
+            dispatch(refreshAllFeedsProgress(percent));
+          }
+        }
+      }, 100);
+      dispatch(refreshAllFeedsStart());
+    },
+    loaded: (dispatch, xhr) => {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+      }
+      dispatch(refreshAllFeedsSuccess());
+      dispatch(refreshRiverList());
+    },
+    error: (dispatch, xhr) => {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+      }
+      dispatch(refreshAllFeedsError(xhr.statusText));
+    },
+  })
 }

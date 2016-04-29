@@ -93,7 +93,7 @@ def post_refresh_rivers(user):
         batch.update_feeds(all_feeds, sync=False, done_callback=update_progress)
 
     threading.Thread(target=update_main_thread).start()
-    return Response(progress_generator(), mimetype='text/plain')
+    return Response(progress_generator(), mimetype='application/octet-stream')
 
 
 @app.route("/blob/<hash>")

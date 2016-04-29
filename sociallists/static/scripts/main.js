@@ -14,6 +14,10 @@ import {
   RIVER_UPDATE_START,
   RIVER_UPDATE_FAILED,
   RIVER_UPDATE_SUCCESS,
+  REFRESH_ALL_FEEDS_START,
+  REFRESH_ALL_FEEDS_SUCCESS,
+  REFRESH_ALL_FEEDS_ERROR,
+  REFRESH_ALL_FEEDS_PROGRESS,
   refreshRiverList
 } from './actions'
 
@@ -105,9 +109,40 @@ function state_rivers(state = [], action) {
   }
 }
 
+function state_loading(state = false, action) {
+  switch(action.type) {
+    case REFRESH_ALL_FEEDS_START:
+      return true;
+
+    case REFRESH_ALL_FEEDS_SUCCESS:
+    case REFRESH_ALL_FEEDS_ERROR:
+      return false;
+
+    default:
+      return state;
+  }
+}
+
+function state_load_progress(state = 0, action) {
+  switch(action.type) {
+    case REFRESH_ALL_FEEDS_START:
+    case REFRESH_ALL_FEEDS_SUCCESS:
+    case REFRESH_ALL_FEEDS_ERROR:
+      return 0;
+
+    case REFRESH_ALL_FEEDS_PROGRESS:
+      return action.percent;
+
+    default:
+      return state;
+  }
+}
+
 function sociallistsApp(state = {}, action) {
   return {
     rivers: state_rivers(state.rivers, action),
+    loading: state_loading(state.loading, action),
+    load_progress: state_load_progress(state.load_progress, action),
   };
 }
 
