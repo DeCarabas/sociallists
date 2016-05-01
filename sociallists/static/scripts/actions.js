@@ -114,7 +114,6 @@ export function refreshAllFeedsSuccess() {
 
 export const REFRESH_ALL_FEEDS_ERROR = 'REFRESH_ALL_FEEDS_ERROR';
 export function refreshAllFeedsError(error) {
-  console.log('error')
   return {
     type: REFRESH_ALL_FEEDS_ERROR,
     error: error,
@@ -156,7 +155,6 @@ function xhrAction(options) {
 }
 
 export function addFeedToRiver(index, river) {
-  console.log("addFeedToRiver", index, river);
   return xhrAction({
     verb: 'POST', url: river.url,
     msg: { 'url': river.modal.value },
@@ -198,7 +196,6 @@ export function refreshRiverList() {
 
 export function refreshAllFeeds() {
   let pollTimer = null;
-
   return xhrAction({
     verb: "POST", url: "api/v1/river/doty/refresh_all",
     start: (dispatch, xhr) => {

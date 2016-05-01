@@ -3,6 +3,7 @@ var ReactDOM = require('react-dom');
 import { connect, Provider } from 'react-redux'
 import { createStore, applyMiddleware } from 'redux'
 import thunkMiddleware from 'redux-thunk'
+import createLogger from 'redux-logger'
 
 import {
   TOGGLE_ADD_FEED_BOX,
@@ -148,10 +149,10 @@ function sociallistsApp(state = {}, action) {
 
 // State store, where it all comes together.
 //
-let store = createStore(
+const logger = createLogger();
+const store = createStore(
   sociallistsApp,
-  // default_state,
-  applyMiddleware(thunkMiddleware)
+  applyMiddleware(thunkMiddleware, logger)
 );
 
 ReactDOM.render(
