@@ -149,7 +149,9 @@ function sociallistsApp(state = {}, action) {
 
 // State store, where it all comes together.
 //
-const logger = createLogger();
+const logger = createLogger({
+  collapsed: true,
+});
 const store = createStore(
   sociallistsApp,
   applyMiddleware(thunkMiddleware, logger)

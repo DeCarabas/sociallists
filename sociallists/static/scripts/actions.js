@@ -1,3 +1,11 @@
+function assert(condition, message) {
+  if (!condition) {
+    debugger;
+    console.log('Assertion failed: ', message);
+    throw Error('Assertion failed', message);
+  }
+}
+
 export const TOGGLE_ADD_FEED_BOX = 'TOGGLE_ADD_FEED_BOX';
 export function toggleAddFeedBox(index) {
   return {
@@ -121,7 +129,12 @@ export function refreshAllFeedsError(error) {
 }
 
 function xhrAction(options) {
-  return function doXHR(dispatch) {
+  return function doXHR(dispatch, getState) {
+    if (options.precondition) {
+      if (!options.precondition(dispatch, getState)) {
+        return;
+      }
+    }
     let xhr = new XMLHttpRequest();
     if (options.start) {
       options.start(dispatch, xhr);
@@ -197,6 +210,10 @@ export function refreshRiverList() {
 export function refreshAllFeeds() {
   let pollTimer = null;
   return xhrAction({
+    precondition: (dispatch, getState) => {
+      const state = getState();
+      return !state.loading;
+    },
     verb: "POST", url: "api/v1/river/doty/refresh_all",
     start: (dispatch, xhr) => {
       pollTimer = setInterval(() => {
