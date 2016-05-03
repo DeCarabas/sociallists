@@ -13,7 +13,6 @@ const RiverFeedUpdate = ({update}) => {
     marginLeft: 10,
   };
 
-  let udkeypart = update.feedUrl + '|' + update.whenLastUpdate;
   let items = update.item.slice(0, 3);
   let more_box = (update.item.length > 3
     ? <p>More...</p>
@@ -22,14 +21,7 @@ const RiverFeedUpdate = ({update}) => {
     <div style={style}>
       <RiverFeedUpdateTitle update={update} />
       <div style={innerStyle}>
-        {
-          items.map(i =>
-            <RiverItem
-              item={i}
-              key={ udkeypart + '|' + i.id }
-            />
-          )
-        }
+        { items.map(i => <RiverItem item={i} key={i.id} />) }
         { more_box }
       </div>
     </div>

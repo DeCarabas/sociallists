@@ -20,12 +20,10 @@ const RiverUpdates = ({river}) => {
   return (
     <div style={style}>
     {
-      updates.map(u =>
-        <RiverFeedUpdate
-          update={u}
-          key={ u.feedUrl + '|' + u.whenLastUpdate }
-          />
-      )
+      updates.map(u => {
+        const key = u.feedUrl + '|' + u.whenLastUpdate;
+        return <RiverFeedUpdate update={u} key={key} />;
+      })
     }
     </div>
   )
