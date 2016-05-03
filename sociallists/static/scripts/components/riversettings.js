@@ -61,7 +61,7 @@ const RiverSettingsBase = ({index, river, feedUrlChanged, addFeedToRiver}) => {
     left: 0,
     right: 0,
     padding: COLUMNSPACER,
-    borderBottom: '1px solid ' + COLOR_VERY_DARK,
+    border: '1px solid ' + COLOR_VERY_DARK,
   };
 
   return <div style={style}>
