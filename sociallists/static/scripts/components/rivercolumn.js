@@ -6,7 +6,7 @@ import {
   RIVER_COLUMN_BACKGROUND_COLOR,
   COLOR_VERY_DARK
 } from './style'
-import AddFeedBox from './addfeedbox'
+import AddFeedBox from './riversettings'
 import RiverProgress from './riverprogress'
 import RiverTitle from './rivertitle'
 import RiverUpdates from './riverupdates'
