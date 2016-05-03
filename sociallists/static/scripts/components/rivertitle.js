@@ -10,7 +10,7 @@ import {
 
 const RiverSettingsButton = ({river, onShowSettings, onHideSettings}) => {
   const is_settings = (river.modal || {}).kind === 'settings';
-  const icon = is_settings ? 'fa-chevron-up' : 'fa-plus';
+  const icon = is_settings ? 'fa-chevron-up' : 'fa-gear';
   const onClick = is_settings ? onHideSettings : onShowSettings;
   return <i className={'fa ' + icon} style={BUTTON_STYLE} onClick={onClick} />
 }
