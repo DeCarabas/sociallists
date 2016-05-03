@@ -28,7 +28,6 @@ is still something I want to do but it will have to wait.)
 # TODO:
 
 UI:
-- Fill out the More box in the UI to expand things
 - Disable images in feeds as an option.
 - Different river layouts (normal, big images, all images...)
 - Error boxes
@@ -37,8 +36,6 @@ UI:
   - Put navigation buttons in the boundaries between refreshes that jump up
     and down. (i.e., build a meta-FeedUpdate construct that is "refresh
     session"; it will be river-specific. This might be complex.)
-- Top "title bar"
-- Refresh button in title bar, remove per-river refresh (dumb)
 
 Shipping:
 - Re-visit use of requirements and packages and vendoring and the like
