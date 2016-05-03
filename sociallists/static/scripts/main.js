@@ -9,7 +9,8 @@ import { update_key } from './util'
 import {
   EXPAND_FEED_UPDATE,
   COLLAPSE_FEED_UPDATE,
-  TOGGLE_ADD_FEED_BOX,
+  SHOW_RIVER_SETTINGS,
+  HIDE_RIVER_SETTINGS,
   RIVER_ADD_FEED_URL_CHANGED,
   RIVER_ADD_FEED_START,
   RIVER_ADD_FEED_FAILED,
@@ -106,23 +107,21 @@ function state_river(state = def_river, action) {
         url: action.url,
       });
     case RIVER_ADD_FEED_URL_CHANGED:
-      if (state.modal && state.modal.kind === 'add_feed') {
+      if (state.modal && state.modal.kind === 'settings') {
         return Object.assign({}, state, {
-          modal: { kind: 'add_feed', value: action.new_value },
+          modal: { kind: 'settings', value: action.new_value },
         });
       } else {
         return state;
       }
-    case TOGGLE_ADD_FEED_BOX:
-      if (state.modal && state.modal.kind === 'add_feed') {
-        return Object.assign({}, state, {
-          modal: { kind: 'none', },
-        });
-      } else {
-        return Object.assign({}, state, {
-          modal: { kind: 'add_feed', value: '', }
-        });
-      }
+    case SHOW_RIVER_SETTINGS:
+      return Object.assign({}, state, {
+        modal: { kind: 'settings', value: '', },
+      });
+    case HIDE_RIVER_SETTINGS:
+      return Object.assign({}, state, {
+        modal: { kind: 'none', },
+      });
     case EXPAND_FEED_UPDATE:
     case COLLAPSE_FEED_UPDATE:
       return Object.assign({}, state, {
@@ -145,7 +144,8 @@ function state_rivers(state = [], action) {
       });
     case EXPAND_FEED_UPDATE:
     case COLLAPSE_FEED_UPDATE:
-    case TOGGLE_ADD_FEED_BOX:
+    case SHOW_RIVER_SETTINGS:
+    case HIDE_RIVER_SETTINGS:
     case RIVER_UPDATE_START:
     case RIVER_UPDATE_FAILED:
     case RIVER_UPDATE_SUCCESS:

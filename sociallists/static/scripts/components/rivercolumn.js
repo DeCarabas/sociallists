@@ -10,18 +10,18 @@ import RiverSettings from './riversettings'
 import RiverProgress from './riverprogress'
 import RiverTitle from './rivertitle'
 import RiverUpdates from './riverupdates'
-import { refreshRiver, toggleAddFeedBox } from '../actions'
+import { showRiverSettings, hideRiverSettings } from '../actions'
 
 function modalForRiver(river, index) {
   const modal = river.modal || {};
   switch (modal.kind) {
     case 'loading': return <RiverProgress percent={modal.percent} />;
-    case 'add_feed': return <RiverSettings river={river} index={index} />;
+    case 'settings': return <RiverSettings river={river} index={index} />;
     default: return <span />;
   }
 }
 
-const RiverColumnBase = ({rivers, index, onAdd}) => {
+const RiverColumnBase = ({rivers, index, onShowSettings, onHideSettings}) => {
   const style = {
     backgroundColor: RIVER_COLUMN_BACKGROUND_COLOR,
     borderRadius: 10,
@@ -36,7 +36,8 @@ const RiverColumnBase = ({rivers, index, onAdd}) => {
     <div style={style}>
       <RiverTitle
         river={river}
-        onAdd={onAdd(index, river)}
+        onShowSettings={onShowSettings(index, river)}
+        onHideSettings={onHideSettings(index, river)}
       />
       {modal}
       <RiverUpdates river={river} index={index} />
@@ -53,7 +54,8 @@ const vrc_mapStateToProps = (state) => {
 };
 const vrc_mapDispatchToProps = (dispatch) => {
   return {
-    onAdd: (i, r) => (() => dispatch(toggleAddFeedBox(i))),
+    onShowSettings: (i, r) => (() => dispatch(showRiverSettings(i))),
+    onHideSettings: (i, r) => (() => dispatch(hideRiverSettings(i))),
   };
 };
 

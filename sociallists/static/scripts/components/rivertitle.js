@@ -8,12 +8,14 @@ import {
   BUTTON_STYLE,
 } from './style'
 
-const RiverAddButton = ({river, onClick}) => {
-  const icon = river.show_add_box ? 'fa-chevron-up' : 'fa-plus';
+const RiverSettingsButton = ({river, onShowSettings, onHideSettings}) => {
+  const is_settings = (river.modal || {}).kind === 'settings';
+  const icon = is_settings ? 'fa-chevron-up' : 'fa-plus';
+  const onClick = is_settings ? onHideSettings : onShowSettings;
   return <i className={'fa ' + icon} style={BUTTON_STYLE} onClick={onClick} />
 }
 
-const RiverTitle = ({river, onAdd}) => {
+const RiverTitle = ({river, onShowSettings, onHideSettings}) => {
   const divStyle = {
     backgroundColor: RIVER_TITLE_BACKGROUND_COLOR,
   }
@@ -24,7 +26,11 @@ const RiverTitle = ({river, onAdd}) => {
   }
 
   return <div style={divStyle}>
-    <RiverAddButton river={river} onClick={onAdd} />
+    <RiverSettingsButton
+      river={river}
+      onShowSettings={onShowSettings}
+      onHideSettings={onHideSettings}
+      />
     <h1 style={style}>{river.name}</h1>
   </div>;
 };

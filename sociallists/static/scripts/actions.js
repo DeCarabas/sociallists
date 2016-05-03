@@ -16,13 +16,22 @@ export function collapseFeedUpdate(river_index, update_key) {
   }
 }
 
-export const TOGGLE_ADD_FEED_BOX = 'TOGGLE_ADD_FEED_BOX';
-export function toggleAddFeedBox(index) {
+export const SHOW_RIVER_SETTINGS = 'SHOW_RIVER_SETTINGS';
+export function showRiverSettings(river_index) {
   return {
-    type: TOGGLE_ADD_FEED_BOX,
-    river_index: index,
+    type: SHOW_RIVER_SETTINGS,
+    river_index: river_index,
   }
 }
+
+export const HIDE_RIVER_SETTINGS = 'HIDE_RIVER_SETTINGS';
+export function hideRiverSettings(river_index) {
+  return {
+    type: HIDE_RIVER_SETTINGS,
+    river_index: river_index,
+  }
+}
+
 
 export const RIVER_ADD_FEED_START = 'RIVER_ADD_FEED_START';
 export function riverAddFeedStart(index) {
