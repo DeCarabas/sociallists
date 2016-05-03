@@ -1,10 +1,31 @@
 var React = require('react'); // N.B. Still need this because JSX.
+import { connect } from 'react-redux'
+import { expandFeedUpdate, collapseFeedUpdate } from '../actions'
+import { update_key, assert } from '../util'
 import RiverFeedUpdateTitle from './riverfeedupdatetitle'
 import RiverItem from './riveritem'
 
+const MoreBox = ({update, river_index, expand, collapse}) => {
+  if (update.item.length > 3) {
+    const moreStyle = {
+       textAlign: 'right',
+       cursor: 'pointer',
+    };
+    if (!update.expanded) {
+      const click = expand(river_index, update_key(update));
+      return <p style={moreStyle} onClick={click}>More...</p>;
+    } else {
+      const click = collapse(river_index, update_key(update));
+      return <p style={moreStyle} onClick={click}>Less...</p>;
+    }
+  }
+
+  return <p />;
+};
+
 // RiverFeedUpdate
 //
-const RiverFeedUpdate = ({update}) => {
+const RiverFeedUpdateBase = ({update, river_index, expand, collapse}) => {
   const style = {
     margin: 3,
   };
@@ -13,19 +34,34 @@ const RiverFeedUpdate = ({update}) => {
     marginLeft: 10,
   };
 
-  let items = update.item.slice(0, 3);
-  let more_box = (update.item.length > 3
-    ? <p>More...</p>
-    : <p/>);
+  const items = update.expanded ? update.item : update.item.slice(0, 3);
   return(
     <div style={style}>
       <RiverFeedUpdateTitle update={update} />
       <div style={innerStyle}>
         { items.map(i => <RiverItem item={i} key={i.id} />) }
-        { more_box }
+        <MoreBox
+          update={update}
+          river_index={river_index}
+          expand={expand}
+          collapse={collapse}
+          />
       </div>
     </div>
   );
 };
+
+const mapStateToProps = (state) => { return {}; };
+const mapDispatchToProps = (dispatch) => {
+  return {
+    expand: (river_index, update_key) =>
+      () => dispatch(expandFeedUpdate(river_index, update_key)),
+    collapse: (river_index, update_key) =>
+      () => dispatch(collapseFeedUpdate(river_index, update_key)),
+  };
+};
+
+const RiverFeedUpdate =
+  connect(mapStateToProps, mapDispatchToProps)(RiverFeedUpdateBase);
 
 export default RiverFeedUpdate;

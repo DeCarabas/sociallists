@@ -1,8 +1,18 @@
-function assert(condition, message) {
-  if (!condition) {
-    debugger;
-    console.log('Assertion failed: ', message);
-    throw Error('Assertion failed', message);
+export const EXPAND_FEED_UPDATE = 'EXPAND_FEED_UPDATE';
+export function expandFeedUpdate(river_index, update_key) {
+  return {
+    type: EXPAND_FEED_UPDATE,
+    river_index: river_index,
+    update_key: update_key,
+  }
+}
+
+export const COLLAPSE_FEED_UPDATE = 'COLLAPSE_FEED_UPDATE';
+export function collapseFeedUpdate(river_index, update_key) {
+  return {
+    type: COLLAPSE_FEED_UPDATE,
+    river_index: river_index,
+    update_key: update_key,
   }
 }
 
@@ -10,7 +20,7 @@ export const TOGGLE_ADD_FEED_BOX = 'TOGGLE_ADD_FEED_BOX';
 export function toggleAddFeedBox(index) {
   return {
     type: TOGGLE_ADD_FEED_BOX,
-    index: index,
+    river_index: index,
   }
 }
 
@@ -18,7 +28,7 @@ export const RIVER_ADD_FEED_START = 'RIVER_ADD_FEED_START';
 export function riverAddFeedStart(index) {
   return {
     type: RIVER_ADD_FEED_START,
-    index: index,
+    river_index: index,
   }
 }
 
@@ -26,7 +36,7 @@ export const RIVER_ADD_FEED_SUCCESS = 'RIVER_ADD_FEED_SUCCESS';
 export function riverAddFeedSuccess(index) {
   return {
     type: RIVER_ADD_FEED_SUCCESS,
-    index: index,
+    river_index: index,
   }
 }
 
@@ -34,7 +44,7 @@ export const RIVER_ADD_FEED_FAILED = 'RIVER_ADD_FEED_FAILED';
 export function riverAddFeedFailed(index) {
   return {
     type: RIVER_ADD_FEED_FAILED,
-    index: index,
+    river_index: index,
   }
 }
 
@@ -42,7 +52,7 @@ export const RIVER_ADD_FEED_URL_CHANGED = 'RIVER_ADD_FEED_URL_CHANGED';
 export function riverAddFeedUrlChanged(index, new_value) {
   return {
     type: RIVER_ADD_FEED_URL_CHANGED,
-    index: index,
+    river_index: index,
     new_value: new_value,
   };
 }
@@ -74,7 +84,7 @@ export const RIVER_UPDATE_START = 'RIVER_UPDATE_START';
 export function riverUpdateStart(index) {
   return {
     type: RIVER_UPDATE_START,
-    index: index,
+    river_index: index,
   };
 }
 
@@ -82,7 +92,7 @@ export const RIVER_UPDATE_SUCCESS = 'RIVER_UPDATE_SUCCESS';
 export function riverUpdateSuccess(index, name, url, response) {
   return {
     type: RIVER_UPDATE_SUCCESS,
-    index: index,
+    river_index: index,
     name: name,
     url: url,
     response: response,
@@ -93,7 +103,7 @@ export const RIVER_UPDATE_FAILED = 'RIVER_UPDATE_FAILED';
 export function riverUpdateFailed(index, error) {
   return {
     type: RIVER_UPDATE_FAILED,
-    index: index,
+    river_index: index,
     error: error,
   };
 }

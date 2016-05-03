@@ -4,8 +4,11 @@ import { connect, Provider } from 'react-redux'
 import { createStore, applyMiddleware } from 'redux'
 import thunkMiddleware from 'redux-thunk'
 import createLogger from 'redux-logger'
+import { update_key } from './util'
 
 import {
+  EXPAND_FEED_UPDATE,
+  COLLAPSE_FEED_UPDATE,
   TOGGLE_ADD_FEED_BOX,
   RIVER_ADD_FEED_URL_CHANGED,
   RIVER_ADD_FEED_START,
@@ -36,7 +39,15 @@ const def_river = {
   url: '',
 };
 
-const update_key = (update) => update.feedUrl + '|' + update.whenLastUpdate;
+function apply_state_array(state, index, reduce, action) {
+  return index < 0
+    ? state
+    : [].concat(
+        state.slice(0, index),
+        reduce(state[index], action),
+        state.slice(index+1, state.length)
+      );
+}
 
 function migrate_updates(old_updates, new_updates) {
   // We grow updates at the top.
@@ -45,6 +56,30 @@ function migrate_updates(old_updates, new_updates) {
   const match_index = new_updates.findIndex(u => update_key(u) === start_key);
   if (match_index < 0) { return new_updates; }
   return [].concat(new_updates.slice(0, match_index), old_updates);
+}
+
+function state_river_feed_update(state = {}, action) {
+  switch(action.type) {
+    case EXPAND_FEED_UPDATE:
+      return Object.assign({}, state, { expanded: true });
+    case COLLAPSE_FEED_UPDATE:
+      return Object.assign({}, state, { expanded: false });
+    default:
+      return state;
+  }
+}
+
+function state_river_feed_updates(state = [], action) {
+  switch(action.type) {
+    case RIVER_UPDATE_SUCCESS:
+      return migrate_updates(state, action.response.updatedFeeds.updatedFeed);
+    case EXPAND_FEED_UPDATE:
+    case COLLAPSE_FEED_UPDATE:
+      const index = state.findIndex(u => update_key(u) === action.update_key);
+      return apply_state_array(state, index, state_river_feed_update, action);
+    default:
+      return state;
+  }
 }
 
 function state_river(state = def_river, action) {
@@ -67,8 +102,7 @@ function state_river(state = def_river, action) {
       return Object.assign({}, state, {
         modal: { kind: 'none', },
         name: action.name,
-        updates: migrate_updates(
-          state.updates, action.response.updatedFeeds.updatedFeed),
+        updates: state_river_feed_updates(state.updates, action),
         url: action.url,
       });
     case RIVER_ADD_FEED_URL_CHANGED:
@@ -89,6 +123,11 @@ function state_river(state = def_river, action) {
           modal: { kind: 'add_feed', value: '', }
         });
       }
+    case EXPAND_FEED_UPDATE:
+    case COLLAPSE_FEED_UPDATE:
+      return Object.assign({}, state, {
+        updates: state_river_feed_updates(state.updates, action),
+      });
     default:
       return state;
   }
@@ -104,6 +143,8 @@ function state_rivers(state = [], action) {
           url: nr.url,
         });
       });
+    case EXPAND_FEED_UPDATE:
+    case COLLAPSE_FEED_UPDATE:
     case TOGGLE_ADD_FEED_BOX:
     case RIVER_UPDATE_START:
     case RIVER_UPDATE_FAILED:
@@ -112,11 +153,7 @@ function state_rivers(state = [], action) {
     case RIVER_ADD_FEED_FAILED:
     case RIVER_ADD_FEED_SUCCESS:
     case RIVER_ADD_FEED_URL_CHANGED:
-      return [].concat(
-        state.slice(0, action.index),
-        state_river(state[action.index], action),
-        state.slice(action.index+1, state.length)
-      );
+      return apply_state_array(state, action.river_index, state_river, action);
     default:
       return state;
   }

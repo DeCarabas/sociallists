@@ -24,12 +24,8 @@ const RiverSetBar = ({title, loading, load_progress, onRefresh}) => {
     fontWeight: 'bold',
   };
 
-  let refresh_color = loading
-    ? RIVER_TITLE_BACKGROUND_COLOR
-    : APP_TEXT_COLOR;
-  let onClick = loading
-    ? () => { }
-    : onRefresh;
+  const refresh_color = loading ? RIVER_TITLE_BACKGROUND_COLOR : APP_TEXT_COLOR;
+  const onClick = loading ? () => { } : onRefresh;
 
   const refresh_style = {
     display: 'inline-block',
@@ -43,7 +39,7 @@ const RiverSetBar = ({title, loading, load_progress, onRefresh}) => {
       <i style={BUTTON_STYLE} onClick={onClick} className="fa fa-refresh" />
     </div>
     <RiverProgress
-      progress={load_progress / 100}
+      progress={load_progress / 100} 
       backgroundColor={APP_BACKGROUND_COLOR}
       />
   </div>

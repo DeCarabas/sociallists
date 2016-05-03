@@ -39,7 +39,7 @@ const RiverColumnBase = ({rivers, index, onAdd}) => {
         onAdd={onAdd(index, river)}
       />
       {modal}
-      <RiverUpdates river={river} />
+      <RiverUpdates river={river} index={index} />
     </div>
   );
 };

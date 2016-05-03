@@ -1,7 +1,8 @@
 var React = require('react'); // N.B. Still need this because JSX.
 import RiverFeedUpdate from './riverfeedupdate'
+import { update_key } from '../util'
 
-const RiverUpdates = ({river}) => {
+const RiverUpdates = ({river, index}) => {
   const TOP_SPACE = 65;
   const SIDE_PADDING = 3;
 
@@ -17,16 +18,10 @@ const RiverUpdates = ({river}) => {
   };
 
   let updates = river.updates || [];
-  return (
-    <div style={style}>
-    {
-      updates.map(u => {
-        const key = u.feedUrl + '|' + u.whenLastUpdate;
-        return <RiverFeedUpdate update={u} key={key} />;
-      })
-    }
-    </div>
-  )
+  return <div style={style}>
+    { updates.map(u =>
+      <RiverFeedUpdate update={u} river_index={index} key={update_key(u)} />) }
+  </div>;
 }
 
 export default RiverUpdates;
