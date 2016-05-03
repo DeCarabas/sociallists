@@ -45,7 +45,15 @@ const AddFeedBoxUrl = ({onChange}) => {
   </div>;
 }
 
-const AddFeedBoxBase = ({index, river, feedUrlChanged, addFeedToRiver}) => {
+const AddFeedBox = ({index, river, feedUrlChanged, addFeedToRiver}) => {
+  return <div>
+    <AddFeedBoxTitle />
+    <AddFeedBoxUrl onChange={(text) => feedUrlChanged(index, text)} />
+    <AddFeedBoxButton onClick={() => addFeedToRiver(index, river)} />
+  </div>;
+}
+
+const RiverSettingsBase = ({index, river, feedUrlChanged, addFeedToRiver}) => {
   const style = {
     backgroundColor: COLOR_VERY_LIGHT,
     zIndex: 3,
@@ -57,9 +65,11 @@ const AddFeedBoxBase = ({index, river, feedUrlChanged, addFeedToRiver}) => {
   };
 
   return <div style={style}>
-    <AddFeedBoxTitle />
-    <AddFeedBoxUrl onChange={(text) => feedUrlChanged(index, text)} />
-    <AddFeedBoxButton onClick={() => addFeedToRiver(index, river)} />
+    <AddFeedBox
+      index={index}
+      river={river}
+      feedUrlChanged={feedUrlChanged}
+      addFeedToRiver={addFeedToRiver} />
   </div>;
 }
 
@@ -75,6 +85,7 @@ const mapDispatchToProps = (dispatch) => {
   };
 };
 
-const AddFeedBox = connect(mapStateToProps, mapDispatchToProps)(AddFeedBoxBase);
+const RiverSettings =
+  connect(mapStateToProps, mapDispatchToProps)(RiverSettingsBase);
 
-export default AddFeedBox;
+export default RiverSettings;

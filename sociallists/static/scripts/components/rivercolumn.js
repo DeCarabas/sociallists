@@ -6,7 +6,7 @@ import {
   RIVER_COLUMN_BACKGROUND_COLOR,
   COLOR_VERY_DARK
 } from './style'
-import AddFeedBox from './riversettings'
+import RiverSettings from './riversettings'
 import RiverProgress from './riverprogress'
 import RiverTitle from './rivertitle'
 import RiverUpdates from './riverupdates'
@@ -16,7 +16,7 @@ function modalForRiver(river, index) {
   const modal = river.modal || {};
   switch (modal.kind) {
     case 'loading': return <RiverProgress percent={modal.percent} />;
-    case 'add_feed': return <AddFeedBox river={river} index={index} />;
+    case 'add_feed': return <RiverSettings river={river} index={index} />;
     default: return <span />;
   }
 }
