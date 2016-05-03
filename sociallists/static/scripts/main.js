@@ -36,6 +36,17 @@ const def_river = {
   url: '',
 };
 
+const update_key = (update) => update.feedUrl + '|' + update.whenLastUpdate;
+
+function migrate_updates(old_updates, new_updates) {
+  // We grow updates at the top.
+  if (!old_updates.length) { return new_updates; }
+  const start_key = update_key(old_updates[0]);
+  const match_index = new_updates.findIndex(u => update_key(u) === start_key);
+  if (match_index < 0) { return new_updates; }
+  return [].concat(new_updates.slice(0, match_index), old_updates);
+}
+
 function state_river(state = def_river, action) {
   switch(action.type) {
     case RIVER_ADD_FEED_START:
@@ -56,7 +67,8 @@ function state_river(state = def_river, action) {
       return Object.assign({}, state, {
         modal: { kind: 'none', },
         name: action.name,
-        updates: action.response.updatedFeeds.updatedFeed,
+        updates: migrate_updates(
+          state.updates, action.response.updatedFeeds.updatedFeed),
         url: action.url,
       });
     case RIVER_ADD_FEED_URL_CHANGED:
