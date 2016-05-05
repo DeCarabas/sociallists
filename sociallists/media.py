@@ -161,6 +161,13 @@ def _extract_twitter_image_url(url, soup):
 
     return None
 
+def _extract_known_goodness(url, soup):
+    section = soup.find('section', attrs={'class': 'comic-art'})
+    if section and section.img:
+        return section.img['src']
+
+    return None
+
 def _should_ignore_image_url(url):
     if url.endswith('addgoogle2.gif'):
         return True
@@ -214,6 +221,12 @@ def _find_thumbnail_url_from_soup(url, soup, http_session):
         events.thumbnail_is_link_rel(url)
         return thumbnail_spec['href']
 
+    # Look for magic that doty has programmed explicitly
+    thumbnail_url = _extract_known_goodness(url, soup)
+    if thumbnail_url:
+        events.thumbnail_is_known_goodness(url)
+        return thumbnail_url
+
     # ok, we have no guidance from the author. look for the largest
     # image on the page with a few caveats. (see below)
     logger.info('{url} Searching HTML for images...'.format(url=url))
@@ -237,9 +250,10 @@ def _find_thumbnail_url_from_soup(url, soup, http_session):
             continue
 
         # ignore excessively long/wide images
-        if max(size) / min(size) > 2.25:
-            logger.debug('{url} {image_url} is too oblong'.format(
-                url=url, image_url=image_url))
+        ratio = max(size) / min(size)
+        if ratio > 2.25:
+            logger.debug('{url} {image_url} is too oblong ({ratio})'.format(
+                url=url, image_url=image_url, ratio=ratio))
             continue
 
         # penalize images with "sprite" in their name

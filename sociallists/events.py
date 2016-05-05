@@ -18,6 +18,7 @@ STATS = scales.collection(
     scales.IntStat('thumbnail_is_open_graph'),
     scales.IntStat('thumbnail_is_twitter'),
     scales.IntStat('thumbnail_is_link_rel'),
+    scales.IntStat('thumbnail_is_known_goodness'),
     scales.IntStat('thumbnail_is_not_supported'),
     scales.IntStat('thumbnail_is_img_tag'),
 )
@@ -72,6 +73,10 @@ def thumbnail_is_twitter(url):
 def thumbnail_is_link_rel(url):
     logger.info('{url} using thumbnail link rel'.format(url=url))
     STATS.thumbnail_is_link_rel += 1
+
+def thumbnail_is_known_goodness(url):
+    logger.info('{url} using thumbnail from known goodness'.format(url=url))
+    STATS.thumbnail_is_known_goodness += 1
 
 def thumbnail_is_not_supported(url):
     logger.info('{url} is an unsupported type'.format(url=url))
