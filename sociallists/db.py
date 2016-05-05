@@ -52,6 +52,7 @@ class RiverData(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     user_id = Column(Unicode, nullable=False, index=True)
     name = Column(Unicode, nullable=False)
+    mode = Column(Unicode, nullable=True)
 
     feeds = relationship('FeedData', secondary=river_feeds)
 

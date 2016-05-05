@@ -1,5 +1,6 @@
 import feedparser
 import json
+import logging
 import threading
 
 from flask import abort, Flask, g, render_template, request, url_for, Response
@@ -7,6 +8,7 @@ from sociallists.river import feed_to_river
 from sociallists import db, feed, river
 
 app = Flask('sociallists')
+logger = logging.getLogger('sociallists.app')
 
 @app.route("/")
 def index():
@@ -61,6 +63,18 @@ def get_or_post_river(user,id):
         return get_river(user, id)
     else:
         return post_river(user, id)
+
+@app.route("/api/v1/river/<user>/<id>/mode", methods=['POST'])
+def post_river_mode(user,id):
+    request_data = request.get_json(force=True)
+    mode = request_data['mode']
+    with db.session() as session:
+        river = db.load_river_by_name(session, user, id)
+        if river:
+            river.mode = mode
+            session.add(river)
+        session.commit()
+    return (json.dumps({'status': 'ok'}), 200)
 
 @app.route("/api/v1/river/<user>/<id>/public")
 def get_public_river(user,id):

@@ -92,15 +92,6 @@ export function riverListUpdateFailed(error) {
   };
 }
 
-export const RIVER_SET_FEED_MODE = 'RIVER_SET_FEED_MODE';
-export function riverSetFeedMode(river_index, mode) {
-  return {
-    type: RIVER_SET_FEED_MODE,
-    river_index: river_index,
-    mode: mode,
-  }
-}
-
 export const RIVER_UPDATE_START = 'RIVER_UPDATE_START';
 export function riverUpdateStart(index) {
   return {
@@ -196,6 +187,21 @@ function xhrAction(options) {
       xhr.send();
     }
   }
+}
+
+export const RIVER_SET_FEED_MODE = 'RIVER_SET_FEED_MODE';
+export function riverSetFeedMode(river_index, river, mode) {
+  // Just set the feed mode with the server asynchronously; it's unlikely to
+  // fail and it shouldn't take much time so who cares if it fails to land.
+  return xhrAction({
+    verb: 'POST', url: river.url + '/mode',
+    msg: { 'mode': mode },
+    start: (dispatch) => dispatch({
+      type: RIVER_SET_FEED_MODE,
+      river_index: river_index,
+      mode: mode,
+    }),
+  })
 }
 
 export function addFeedToRiver(index, river) {

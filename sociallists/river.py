@@ -158,7 +158,7 @@ def entry_to_river(entry, i, session=None):
         }
     return item
 
-def wrap_feed_updates(feed_updates):
+def wrap_feed_updates(feed_updates, mode=None):
     """Wrap an array of feed updates in the broader river.js format"""
     return {
         'updatedFeeds': {
@@ -166,6 +166,7 @@ def wrap_feed_updates(feed_updates):
         },
         'metadata': {
             "docs": "http://riverjs.org/",
+            "mode": mode,
         },
     }
 
@@ -195,7 +196,9 @@ def aggregate_river(user, name, start=0):
     with db.session() as session:
         db_river = db.load_river_by_name(session, user, name)
         feed_updates = []
+        mode = None
         if db_river:
+            mode = db_river.mode
             updates = [
                 update for feed in db_river.feeds for update in feed.updates
             ]
@@ -208,7 +211,7 @@ def aggregate_river(user, name, start=0):
         name=name,
         count=len(feed_updates),
     ))
-    return wrap_feed_updates(feed_updates)
+    return wrap_feed_updates(feed_updates, mode)
 
 def add_river_and_feed(user, river_name, url):
     with db.session() as session:

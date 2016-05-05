@@ -126,7 +126,7 @@ const RiverSettingsBase = ({
 
   const addFeed = () => addFeedToRiver(index, river);
   const urlChanged = (text) => feedUrlChanged(index, text);
-  const setFeedMode = (mode) => riverSetFeedMode(index, mode);
+  const setFeedMode = (mode) => riverSetFeedMode(index, river, mode);
 
   return <div style={style}>
     <AddFeedBox feedUrlChanged={feedUrlChanged} addFeedToRiver={addFeed} />
@@ -144,8 +144,8 @@ const mapDispatchToProps = (dispatch) => {
       dispatch(riverAddFeedUrlChanged(index, new_value)),
     'addFeedToRiver': (index, river) =>
       dispatch(addFeedToRiver(index, river)),
-    'riverSetFeedMode': (index, mode) =>
-      dispatch(riverSetFeedMode(index, mode)),
+    'riverSetFeedMode': (index, river, mode) =>
+      dispatch(riverSetFeedMode(index, river, mode)),
   };
 };
 
