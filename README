@@ -34,6 +34,9 @@ UI:
   - Put navigation buttons in the boundaries between refreshes that jump up
     and down. (i.e., build a meta-FeedUpdate construct that is "refresh
     session"; it will be river-specific. This might be complex.)
+- Add/remove rivers
+- Add/remove feeds from rivers
+- Add/remove river sets
 
 Shipping:
 - Re-visit use of requirements and packages and vendoring and the like
