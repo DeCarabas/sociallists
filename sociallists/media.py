@@ -299,4 +299,7 @@ if __name__=='__main__':
 
     import sys
     img = get_url_image(sys.argv[1], (400, 400))
-    img.save('foo.png')
+    if img is None:
+        logger.error('No image found.')
+    else:
+        img.save('foo.png')
