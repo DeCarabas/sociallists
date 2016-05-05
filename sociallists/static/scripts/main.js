@@ -7,6 +7,10 @@ import createLogger from 'redux-logger'
 import { update_key } from './util'
 
 import {
+  RIVER_MODE_AUTO,
+  RIVER_MODE_TEXT,
+  RIVER_MODE_IMAGE,
+
   EXPAND_FEED_UPDATE,
   COLLAPSE_FEED_UPDATE,
   SHOW_RIVER_SETTINGS,
@@ -16,6 +20,7 @@ import {
   RIVER_ADD_FEED_FAILED,
   RIVER_ADD_FEED_SUCCESS,
   RIVER_LIST_UPDATE_SUCCESS,
+  RIVER_SET_FEED_MODE,
   RIVER_UPDATE_START,
   RIVER_UPDATE_FAILED,
   RIVER_UPDATE_SUCCESS,
@@ -38,6 +43,7 @@ const def_river = {
   name: '(Untitled)',
   updates: [],
   url: '',
+  mode: RIVER_MODE_AUTO,
 };
 
 function apply_state_array(state, index, reduce, action) {
@@ -89,6 +95,10 @@ function state_river(state = def_river, action) {
     case RIVER_UPDATE_START:
       return Object.assign({}, state, {
         modal: { kind: 'loading', percent: 1 },
+      });
+    case RIVER_SET_FEED_MODE:
+      return Object.assign({}, state, {
+        mode: action.mode,
       });
     case RIVER_ADD_FEED_SUCCESS:
       return Object.assign({}, state, {
@@ -146,6 +156,7 @@ function state_rivers(state = [], action) {
     case COLLAPSE_FEED_UPDATE:
     case SHOW_RIVER_SETTINGS:
     case HIDE_RIVER_SETTINGS:
+    case RIVER_SET_FEED_MODE:
     case RIVER_UPDATE_START:
     case RIVER_UPDATE_FAILED:
     case RIVER_UPDATE_SUCCESS:

@@ -25,7 +25,7 @@ const MoreBox = ({update, river_index, expand, collapse}) => {
 
 // RiverFeedUpdate
 //
-const RiverFeedUpdateBase = ({update, river_index, expand, collapse}) => {
+const RiverFeedUpdateBase = ({update, mode, river_index, expand, collapse}) => {
   const style = {
     margin: 3,
   };
@@ -39,7 +39,7 @@ const RiverFeedUpdateBase = ({update, river_index, expand, collapse}) => {
     <div style={style}>
       <RiverFeedUpdateTitle update={update} />
       <div style={innerStyle}>
-        { items.map(i => <RiverItem item={i} key={i.id} />) }
+        { items.map(i => <RiverItem item={i} mode={mode} key={i.id} />) }
         <MoreBox
           update={update}
           river_index={river_index}

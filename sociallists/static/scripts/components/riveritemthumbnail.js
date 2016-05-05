@@ -1,7 +1,7 @@
 var React = require('react'); // N.B. Still need this because JSX.
 import { FULL_IMAGE_WIDTH } from './style'
 
-const RiverItemThumbnail = ({item}) => {
+const RiverItemThumbnail = ({item, mode = 'auto'}) => {
   let thumb = item.thumbnail;
   if (thumb) {
     let imgstyle = {
@@ -12,7 +12,8 @@ const RiverItemThumbnail = ({item}) => {
       marginRight: 3,
       marginBottom: 3,
     }
-    if ((item.body || '').length > 140) {
+    if ((mode === 'text') ||
+       (mode === 'auto' && (item.body || '').length > 140)) {
       imgstyle.float = 'right';
       imgstyle.width = 100;
       imgstyle.height = 100;

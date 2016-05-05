@@ -19,8 +19,15 @@ const RiverUpdates = ({river, index}) => {
 
   let updates = river.updates || [];
   return <div style={style}>
-    { updates.map(u =>
-      <RiverFeedUpdate update={u} river_index={index} key={update_key(u)} />) }
+    {
+      updates.map(u =>
+        <RiverFeedUpdate
+          update={u}
+          mode={river.mode}
+          river_index={index}
+          key={update_key(u)}
+          />)
+      }
   </div>;
 }
 

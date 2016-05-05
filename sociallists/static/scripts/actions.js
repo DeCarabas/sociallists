@@ -1,3 +1,7 @@
+export const RIVER_MODE_AUTO = 'auto';
+export const RIVER_MODE_IMAGE = 'image';
+export const RIVER_MODE_TEXT = 'text';
+
 export const EXPAND_FEED_UPDATE = 'EXPAND_FEED_UPDATE';
 export function expandFeedUpdate(river_index, update_key) {
   return {
@@ -31,7 +35,6 @@ export function hideRiverSettings(river_index) {
     river_index: river_index,
   }
 }
-
 
 export const RIVER_ADD_FEED_START = 'RIVER_ADD_FEED_START';
 export function riverAddFeedStart(index) {
@@ -87,6 +90,15 @@ export function riverListUpdateFailed(error) {
     type: RIVER_LIST_UPDATE_FAILED,
     error: error,
   };
+}
+
+export const RIVER_SET_FEED_MODE = 'RIVER_SET_FEED_MODE';
+export function riverSetFeedMode(river_index, mode) {
+  return {
+    type: RIVER_SET_FEED_MODE,
+    river_index: river_index,
+    mode: mode,
+  }
 }
 
 export const RIVER_UPDATE_START = 'RIVER_UPDATE_START';

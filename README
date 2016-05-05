@@ -28,8 +28,7 @@ is still something I want to do but it will have to wait.)
 # TODO:
 
 UI:
-- Disable images in feeds as an option.
-- Different river layouts (normal, big images, all images...)
+- Make mode selection durable
 - Error boxes
 - Enable jumping between refresh sessions:
   - Mark the top refresh session on all rivers when we start a refresh.
