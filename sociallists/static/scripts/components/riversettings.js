@@ -129,7 +129,7 @@ const RiverSettingsBase = ({
   const setFeedMode = (mode) => riverSetFeedMode(index, river, mode);
 
   return <div style={style}>
-    <AddFeedBox feedUrlChanged={feedUrlChanged} addFeedToRiver={addFeed} />
+    <AddFeedBox feedUrlChanged={urlChanged} addFeedToRiver={addFeed} />
     <FeedDisplayModeBox mode={river.mode} setFeedMode={setFeedMode} />
   </div>;
 }
