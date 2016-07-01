@@ -58,3 +58,4 @@ Feed Stuff:
 - Convert to sqlite as part of moving to a self-contained app
   - Alternately, provide a compat layer for sqllite. Maybe SQLAlchemy already
     gives me everything I need?
+- Fix Syblmoon bug where no title means broken rendering
