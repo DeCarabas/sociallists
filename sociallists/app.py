@@ -10,11 +10,6 @@ from sociallists import db, feed, river
 app = Flask('sociallists')
 logger = logging.getLogger('sociallists.app')
 
-@app.route("/")
-def index():
-    g.is_debug = app.debug
-    return render_template('index.html')
-
 @app.route("/api/v1/river/<user>")
 def get_river_list(user):
     with db.session() as session:
