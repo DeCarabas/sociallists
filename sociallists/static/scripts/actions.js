@@ -1,3 +1,5 @@
+import { make_full_url } from './util';
+
 export const RIVER_MODE_AUTO = 'auto';
 export const RIVER_MODE_IMAGE = 'image';
 export const RIVER_MODE_TEXT = 'text';
@@ -157,11 +159,12 @@ function xhrAction(options) {
         return;
       }
     }
+    
     let xhr = new XMLHttpRequest();
     if (options.start) {
       options.start(dispatch, xhr);
     }
-    xhr.open(options.verb || "GET", options.url, true);
+    xhr.open(options.verb || "GET", make_full_url(options.url), true);
     if (options.progress) {
       xhr.addEventListener("progress", () => options.progress(dispatch, xhr));
     }

@@ -15,7 +15,7 @@ WEBPACK_ENTRY=$(SCRIPT_DIR)/main.js
 WEBPACK_INPUT=\
 	$(WEBPACK_ENTRY)   \
 
-WEBPACK_ARGS=--output-path $(SCRIPT_DIR) --output-filename $(WEBPACK_OUTPUT) --entry $(WEBPACK_ENTRY)
+WEBPACK_ARGS=--output-path $(SCRIPT_DIR) --output-filename $(WEBPACK_OUTPUT) --entry $(WEBPACK_ENTRY) --target electron
 
 build-js: $(SCRIPT_DIR)/$(WEBPACK_OUTPUT)
 

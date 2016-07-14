@@ -1,5 +1,7 @@
 var React = require('react'); // N.B. Still need this because JSX.
 import { FULL_IMAGE_WIDTH } from './style'
+import { make_full_url } from '../util'
+import RiverLink from './riverlink'
 
 const RiverItemThumbnail = ({item, mode = 'auto'}) => {
   let thumb = item.thumbnail;
@@ -21,10 +23,11 @@ const RiverItemThumbnail = ({item, mode = 'auto'}) => {
       imgstyle.width = FULL_IMAGE_WIDTH;
       imgstyle.height = FULL_IMAGE_WIDTH;
     }
+
     return (
-      <a href={item.link} target="_blank">
-        <img style={imgstyle} src={thumb.url} />
-      </a>
+      <RiverLink href={item.link}>
+        <img style={imgstyle} src={make_full_url(thumb.url)} />
+      </RiverLink>
     );
   } else {
     return <span />;

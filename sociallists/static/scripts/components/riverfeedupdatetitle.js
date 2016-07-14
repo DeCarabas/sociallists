@@ -1,5 +1,6 @@
 var React = require('react'); // N.B. Still need this because JSX.
-import { UPDATE_TITLE_FONT_SIZE, DEFAULT_LINK_STYLE } from './style'
+import { UPDATE_TITLE_FONT_SIZE } from './style'
+import RiverLink from './riverlink'
 
 const RiverFeedUpdateTitle = ({update}) => {
   const style = {
@@ -8,9 +9,9 @@ const RiverFeedUpdateTitle = ({update}) => {
   return <div style={style}>
     <hr />
     <div style={{float: 'right'}}>{update.whenLastUpdate}</div>
-    <a style={DEFAULT_LINK_STYLE} href={update.websiteUrl}>
+    <RiverLink href={update.websiteUrl}>
       {update.feedTitle}
-    </a>
+    </RiverLink>
     <div style={{float: 'clear', marginBottom: 10,}} />
   </div>;
 };

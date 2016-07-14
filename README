@@ -59,3 +59,4 @@ Feed Stuff:
   - Alternately, provide a compat layer for sqllite. Maybe SQLAlchemy already
     gives me everything I need?
 - Fix Syblmoon bug where no title means broken rendering
+- Clip titles that are too long. (Because seriously.)
