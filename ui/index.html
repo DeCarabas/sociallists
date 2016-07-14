@@ -24,6 +24,9 @@
   </head>
   <body style="margin: 0px; height: 100%;">
     <div id="example" style="height: 100%;"></div>
-    <script src="{{ url_for('static', filename='scripts/bundle.js') }}"></script>
+    <script>
+      require('babel-register');
+      require('./main.js');
+    </script>
   </body>
 </html>

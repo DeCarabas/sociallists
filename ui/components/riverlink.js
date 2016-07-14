@@ -3,8 +3,6 @@ import { DEFAULT_LINK_STYLE } from './style'
 import { shell } from 'electron';
 
 function handleLinkClick(evt, link) {
-  if (!RC_IS_ELECTRON) { return; }
-
   let open_background = false;
   if (evt.metaKey || evt.ctrlKey) {
     open_background = true;

@@ -11,8 +11,6 @@ export function update_key(update) {
 }
 
 export function make_full_url(url) {
-  if (!window.RC_IS_ELECTRON) { return url; }
-
   let full_url = url;
   if (!full_url.startsWith('/')) {
     full_url = '/' + full_url;
