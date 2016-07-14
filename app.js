@@ -16,6 +16,8 @@ console.log('Hello world!');
 function startPythonServer() {
   // Here we go.
   if (python_server === null) {
+    console.log('Starting server...');
+
     const venv = `${__dirname}/venv`;
     python_server = child_process.spawn(
       'venv/bin/python',
@@ -77,5 +79,12 @@ app.on('activate', function () {
   // dock icon is clicked and there are no other windows open.
   if (mainWindow === null) {
     createWindow()
+  }
+})
+
+app.on('quit', function() {
+  if (python_server !== null) {
+    console.log('Shutting down server...');
+    python_server.kill();
   }
 })
