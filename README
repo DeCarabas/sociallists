@@ -42,7 +42,7 @@ UI:
 Shipping:
 - Re-visit use of requirements and packages and vendoring and the like
 - Re-pack font awesome fonts
-- Figure out how to pivot to a client-side app
+- Use packed/minified/precompiled source if it exists
 
 Feed Stuff:
 - Extract enclosures and the like, store locally (in the DB) and present them
