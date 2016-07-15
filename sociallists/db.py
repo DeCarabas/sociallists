@@ -21,7 +21,10 @@ from sqlalchemy.types import (
 
 logger = logging.getLogger('sociallists.db')
 
-engine = create_engine(os.environ.get('DB_CONNECTION_STRING', "postgresql:///sociallists"))
+engine = create_engine(os.environ.get(
+    'DB_CONNECTION_STRING',
+    "sqlite:///reversechrono.db",
+))
 session_maker = sessionmaker(bind=engine, autoflush=False)
 global_session = scoped_session(session_maker)
 

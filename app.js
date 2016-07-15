@@ -1,5 +1,6 @@
 const electron = require('electron');
 const child_process = require('child_process');
+const path = require('path');
 
 // Module to control application life.
 const app = electron.app;
@@ -19,6 +20,8 @@ function startPythonServer() {
     console.log('Starting server...');
 
     const venv = `${__dirname}/venv`;
+    const dataPath = path.join(app.getPath('userData'), 'reversechrono.db');
+    console.log('Database file is: ' + dataPath);
     python_server = child_process.spawn(
       'venv/bin/python',
       ['-m', 'sociallists'],
@@ -26,7 +29,7 @@ function startPythonServer() {
         cwd: __dirname,
         env: {
           VIRTUAL_ENV: venv,
-          DB_CONNECTION_STRING: "postgresql:///sociallists",
+          DB_CONNECTION_STRING: 'sqlite:///' + dataPath,
           PYTHONPATH: __dirname,
         },
       });
