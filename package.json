@@ -1,7 +1,7 @@
 {
   "name": "ReverseChrono",
   "version": "2016.03.26",
-  "description": "It's a web site",
+  "description": "An RSS reader, in this day and age.",
   "repository": "https://github.com/DeCarabas/sociallists",
   "license": "GPL-3.0",
   "private": true,
