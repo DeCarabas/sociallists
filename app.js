@@ -1,9 +1,11 @@
 const electron = require('electron');
 const child_process = require('child_process');
 const path = require('path');
+const sqlite = require('sqlite3');
 
 // Module to control application life.
 const app = electron.app;
+const protocol = electron.protocol;
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow;
 
@@ -14,14 +16,40 @@ let python_server = null;
 
 console.log('Hello world!');
 
+protocol.registerStandardSchemes(['sqlblob']);
+function registerSQLiteBlobProtocol(db_path) {
+  db = new sqlite.Database(db_path);
+  protocol.registerBufferProtocol('sqlblob', (request, callback) => {
+    let hash = request.url.substr(10);
+    if (hash.endsWith('/')) {
+      hash = hash.substr(0, hash.length-1);
+    }
+
+    console.log('sqlblob:', hash, 'fetch');
+    db.get("select contentType, data from blobs where hash = ?", hash, (err, row) => {
+      if (err) {
+        console.log("SQLite blob error: ", err);
+        callback({error: -2});
+      } else {
+        console.log('sqlblob:', hash, 'ok:', row.contentType);
+        callback({mimeType: row.contentType, data: row.data});
+      }
+    });
+  });
+}
+
 function startPythonServer() {
   // Here we go.
   if (python_server === null) {
+    const dataPath = path.join(app.getPath('userData'), 'reversechrono.db');
+    console.log('Database file is: ' + dataPath);
+
+    console.log('Registering protocol...');
+    registerSQLiteBlobProtocol(dataPath);
+
     console.log('Starting server...');
 
     const venv = `${__dirname}/venv`;
-    const dataPath = path.join(app.getPath('userData'), 'reversechrono.db');
-    console.log('Database file is: ' + dataPath);
     python_server = child_process.spawn(
       'venv/bin/python',
       ['-m', 'sociallists'],

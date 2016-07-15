@@ -33,7 +33,8 @@ def rewrite_river(r):
             if thumb is not None:
                 h = thumb.get('__blob')
                 if h is not None:
-                    thumb['url'] = url_for('get_blob', hash=thumb['__blob'])
+                    # thumb['url'] = url_for('get_blob', hash=thumb['__blob'])
+                    thumb['url'] = 'sqlblob://' + thumb['__blob']
                     del thumb['__blob']
     return r
 
