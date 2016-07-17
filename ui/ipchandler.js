@@ -13,7 +13,9 @@ import {
 
   SVR_MSG_LOAD_RIVER_LIST,
   CLI_MSG_LOAD_RIVER_LIST_SUCCESS,
-  CLI_MSG_LOAD_RIVER_LIST_FAILURE,  
+  CLI_MSG_LOAD_RIVER_LIST_FAILURE,
+
+  SVR_MSG_SET_RIVER_MODE,
 } from '../messages';
 
 export function registerMessageHandlers(dispatch) {
@@ -23,6 +25,7 @@ export function registerMessageHandlers(dispatch) {
       args.context.index,
       args.context.river_name,
       args.context.river_url,
+      args.context.id,
       args.river
     ));
   });
@@ -47,6 +50,7 @@ export function sendLoadRiver(index, river_name, river_url, river_id) {
   ipcRenderer.send(SVR_MSG_LOAD_RIVER, {
     river_id: river_id,
     context: {
+      id: river_id,
       index: index,
       river_name: river_name,
       river_url: river_url,
@@ -56,4 +60,8 @@ export function sendLoadRiver(index, river_name, river_url, river_id) {
 
 export function sendLoadRiverList() {
   ipcRenderer.send(SVR_MSG_LOAD_RIVER_LIST, {});
+}
+
+export function sendSetRiverMode(river_id, mode) {
+  ipcRenderer.send(SVR_MSG_SET_RIVER_MODE, { river_id: river_id, mode: mode });
 }

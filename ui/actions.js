@@ -1,5 +1,9 @@
 import { make_full_url } from './util';
-import { sendLoadRiver, sendLoadRiverList } from './ipchandler';
+import {
+  sendLoadRiver,
+  sendLoadRiverList,
+  sendSetRiverMode,
+} from './ipchandler';
 
 export const RIVER_MODE_AUTO = 'auto';
 export const RIVER_MODE_IMAGE = 'image';
@@ -104,12 +108,13 @@ export function riverUpdateStart(index) {
 }
 
 export const RIVER_UPDATE_SUCCESS = 'RIVER_UPDATE_SUCCESS';
-export function riverUpdateSuccess(index, name, url, response) {
+export function riverUpdateSuccess(index, name, url, id, response) {
   return {
     type: RIVER_UPDATE_SUCCESS,
     river_index: index,
     name: name,
     url: url,
+    id: id,
     response: response,
   };
 }
@@ -195,17 +200,15 @@ function xhrAction(options) {
 
 export const RIVER_SET_FEED_MODE = 'RIVER_SET_FEED_MODE';
 export function riverSetFeedMode(river_index, river, mode) {
-  // Just set the feed mode with the server asynchronously; it's unlikely to
-  // fail and it shouldn't take much time so who cares if it fails to land.
-  return xhrAction({
-    verb: 'POST', url: river.url + '/mode',
-    msg: { 'mode': mode },
-    start: (dispatch) => dispatch({
+  return function doSetThing(dispatch) {
+    console.log(river);
+    sendSetRiverMode(river.id, mode);
+    dispatch({
       type: RIVER_SET_FEED_MODE,
       river_index: river_index,
       mode: mode,
-    }),
-  })
+    });
+  }
 }
 
 export function addFeedToRiver(index, river) {

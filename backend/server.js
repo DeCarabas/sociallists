@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { loadRiver } from './rivers';
-import { loadRiverList } from './db';
+import { loadRiverList, setRiverMode } from './db';
 import {
   SVR_MSG_LOAD_RIVER,
   CLI_MSG_RIVER_LOAD_FAILURE,
@@ -9,6 +9,8 @@ import {
   SVR_MSG_LOAD_RIVER_LIST,
   CLI_MSG_LOAD_RIVER_LIST_SUCCESS,
   CLI_MSG_LOAD_RIVER_LIST_FAILURE,
+
+  SVR_MSG_SET_RIVER_MODE,
 } from '../messages';
 
 export function startServer(database) {
@@ -47,5 +49,11 @@ export function startServer(database) {
       ))
       .fin(() => console.timeEnd('load_river_list'))
       .done();
+  });
+
+  ipcMain.on(SVR_MSG_SET_RIVER_MODE, (event, arg) => {
+    console.time('set_river_mode:' + arg.river_id);
+    setRiverMode(database, arg.river_id, arg.mode);
+    console.timeEnd('set_river_mode:' + arg.river_id);
   });
 }

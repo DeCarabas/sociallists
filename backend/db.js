@@ -97,3 +97,7 @@ export function loadRiverList(db) {
   });
   return defer.promise;
 }
+
+export function setRiverMode(db, river_id, mode) {
+  db.run('update rivers set mode = ? where id = ?', mode, river_id);
+}

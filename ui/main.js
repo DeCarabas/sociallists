@@ -116,6 +116,7 @@ function state_river(state = def_river, action) {
         name: action.name,
         updates: state_river_feed_updates(state.updates, action),
         url: action.url,
+        id: action.id,
         mode: action.response.metadata.mode || state.mode,
       });
     case RIVER_ADD_FEED_URL_CHANGED:
