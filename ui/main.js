@@ -5,6 +5,7 @@ import { createStore, applyMiddleware } from 'redux'
 import thunkMiddleware from 'redux-thunk'
 import createLogger from 'redux-logger'
 import { update_key } from './util'
+import { registerMessageHandlers } from './ipchandler'
 
 import {
   RIVER_MODE_AUTO,
@@ -225,4 +226,5 @@ ReactDOM.render(
   document.getElementById('example')
 );
 
+registerMessageHandlers(store.dispatch);
 store.dispatch(refreshRiverList());

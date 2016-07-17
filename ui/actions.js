@@ -1,4 +1,5 @@
 import { make_full_url } from './util';
+import { sendLoadRiver } from './ipchandler';
 
 export const RIVER_MODE_AUTO = 'auto';
 export const RIVER_MODE_IMAGE = 'image';
@@ -159,7 +160,7 @@ function xhrAction(options) {
         return;
       }
     }
-    
+
     let xhr = new XMLHttpRequest();
     if (options.start) {
       options.start(dispatch, xhr);
@@ -214,7 +215,7 @@ export function addFeedToRiver(index, river) {
     start: (dispatch) => dispatch(riverAddFeedStart(index)),
     loaded: (dispatch, xhr) => {
       dispatch(riverAddFeedSuccess(index));
-      dispatch(refreshRiver(index, river.name, river.url));
+      dispatch(refreshRiver(index, river.name, river.url, river.id));
     },
     error: (dispatch, xhr) => {
       dispatch(riverAddFeedFailed(index, xhr.statusText));
@@ -222,15 +223,11 @@ export function addFeedToRiver(index, river) {
   });
 }
 
-export function refreshRiver(index, river_name, river_url) {
-  return xhrAction({
-    url: river_url,
-    start: (dispatch) => dispatch(riverUpdateStart(index)),
-    loaded_json: (dispatch, result) =>
-      dispatch(riverUpdateSuccess(index, river_name, river_url, result)),
-    error: (dispatch, xhr) =>
-      dispatch(riverUpdateFailed(index, xhr.statusText)),
-  });
+export function refreshRiver(index, river_name, river_url, river_id) {
+  return function doRefresh(dispatch) {
+    dispatch(riverUpdateStart(index));
+    sendLoadRiver(index, river_name, river_url, river_id);
+  }
 }
 
 export function refreshRiverList() {
@@ -240,7 +237,7 @@ export function refreshRiverList() {
     loaded_json: (dispatch, result) => {
       dispatch(riverListUpdateSuccess(result));
       result.rivers.forEach((river, index) => {
-        dispatch(refreshRiver(index, river.name, river.url));
+        dispatch(refreshRiver(index, river.name, river.url, river.id));
       });
     },
     error: (dispatch, xhr) => dispatch(riverListUpdateFailed(xhr.statusText)),

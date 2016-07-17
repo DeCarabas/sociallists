@@ -7,8 +7,9 @@ const app = electron.app;
 const protocol = electron.protocol;
 const BrowserWindow = electron.BrowserWindow;
 
+const backend_db = require('./backend/db');
 const backend_proto = require('./backend/protocols');
-
+const backend_server = require('./backend/server');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -17,8 +18,13 @@ let python_server = null;
 
 console.log('Hello world!');
 
+// Initialize the database so that we can initialize everything else downstream.
 const dataPath = path.join(app.getPath('userData'), 'reversechrono.db');
-backend_proto.registerProtocols(dataPath);
+const db = backend_db.initializeDatabase(dataPath);
+
+// Initialize the protocol handlers for images and the like.
+backend_proto.registerProtocols(db);
+backend_server.startServer(db);
 
 function startPythonServer() {
   // Here we go.

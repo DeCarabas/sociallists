@@ -19,6 +19,7 @@ def get_river_list(user):
                 {
                     'name':r.name,
                     'url':url_for('get_or_post_river', user=user, id=r.name),
+                    'id':r.id,
                 }
                 for r in rivers
             ]
