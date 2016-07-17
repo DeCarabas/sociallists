@@ -1,5 +1,5 @@
 import { make_full_url } from './util';
-import { sendLoadRiver } from './ipchandler';
+import { sendLoadRiver, sendLoadRiverList } from './ipchandler';
 
 export const RIVER_MODE_AUTO = 'auto';
 export const RIVER_MODE_IMAGE = 'image';
@@ -231,17 +231,10 @@ export function refreshRiver(index, river_name, river_url, river_id) {
 }
 
 export function refreshRiverList() {
-  return xhrAction({
-    url: "api/v1/river/doty",
-    start: (dispatch) => dispatch(riverListUpdateStart()),
-    loaded_json: (dispatch, result) => {
-      dispatch(riverListUpdateSuccess(result));
-      result.rivers.forEach((river, index) => {
-        dispatch(refreshRiver(index, river.name, river.url, river.id));
-      });
-    },
-    error: (dispatch, xhr) => dispatch(riverListUpdateFailed(xhr.statusText)),
-  });
+  return function doRefreshRiverList(dispatch) {
+    dispatch(riverListUpdateStart());
+    sendLoadRiverList();
+  }
 }
 
 export function refreshAllFeeds() {

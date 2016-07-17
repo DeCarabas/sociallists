@@ -88,3 +88,12 @@ export function loadRiverAndFeeds(db, river_id) {
     });
   });
 }
+
+export function loadRiverList(db) {
+  const defer = Q.defer();
+  db.all("select * from rivers", (err, rows) => {
+    if (err) { return defer.reject(dbError("rivers", err)); }
+    defer.resolve(rows);
+  });
+  return defer.promise;
+}

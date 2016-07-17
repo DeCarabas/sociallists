@@ -1,9 +1,19 @@
 import { ipcRenderer } from 'electron';
-import { riverUpdateSuccess, riverUpdateFailed } from './actions';
+import {
+  refreshRiver,
+  riverUpdateSuccess,
+  riverUpdateFailed,
+  riverListUpdateSuccess,
+  riverListUpdateFailed,
+} from './actions';
 import {
   SVR_MSG_LOAD_RIVER,
   CLI_MSG_RIVER_LOAD_FAILURE,
-  CLI_MSG_RIVER_LOAD_SUCCESS
+  CLI_MSG_RIVER_LOAD_SUCCESS,
+
+  SVR_MSG_LOAD_RIVER_LIST,
+  CLI_MSG_LOAD_RIVER_LIST_SUCCESS,
+  CLI_MSG_LOAD_RIVER_LIST_FAILURE,  
 } from '../messages';
 
 export function registerMessageHandlers(dispatch) {
@@ -20,6 +30,17 @@ export function registerMessageHandlers(dispatch) {
   ipcRenderer.on(CLI_MSG_RIVER_LOAD_FAILURE, (event, args) => {
     dispatch(riverUpdateFailed(args.context.index, args.error));
   });
+
+  ipcRenderer.on(CLI_MSG_LOAD_RIVER_LIST_SUCCESS, (event, args) => {
+    dispatch(riverListUpdateSuccess(args));
+    args.rivers.forEach((river, index) => {
+      dispatch(refreshRiver(index, river.name, river.url, river.id));
+    });
+  });
+
+  ipcRenderer.on(CLI_MSG_LOAD_RIVER_LIST_FAILURE, (event, args) => {
+    dispatch(riverListUpdateFailed(args));
+  });
 }
 
 export function sendLoadRiver(index, river_name, river_url, river_id) {
@@ -31,4 +52,8 @@ export function sendLoadRiver(index, river_name, river_url, river_id) {
       river_url: river_url,
     },
   });
+}
+
+export function sendLoadRiverList() {
+  ipcRenderer.send(SVR_MSG_LOAD_RIVER_LIST, {});
 }
