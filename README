@@ -60,3 +60,4 @@ Feed Stuff:
     gives me everything I need?
 - Fix Syblmoon bug where no title means broken rendering
 - Clip titles that are too long. (Because seriously.)
+- b0rk's feed refreshes completely every time there's a new article; fix it!
