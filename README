@@ -55,9 +55,32 @@ Feed Stuff:
 - Implement ATOM cache timeout and RSS skip hours and the like to poll more
   intelligently.
 - Implement pubsubhubbub
-- Convert to sqlite as part of moving to a self-contained app
-  - Alternately, provide a compat layer for sqllite. Maybe SQLAlchemy already
-    gives me everything I need?
-- Fix Syblmoon bug where no title means broken rendering
 - Clip titles that are too long. (Because seriously.)
+
+Bugs:
+- Can't add feed to river:
+  stderr: 2016-07-18 10:15:23,113 127.0.0.1 - - [18/Jul/2016 10:15:23] "POST /wat/9 HTTP/1.1" 404 -
+- Fix Syblmoon bug where no title means broken rendering
 - b0rk's feed refreshes completely every time there's a new article; fix it!
+- Bug here:
+
+  stderr: 2016-07-18 10:13:01,881 Error updating feed http://feeds.feedburner.com/buckblog: Traceback (most recent call last):
+    File "/Users/doty/src/sociallists/sociallists/feed.py", line 244, in do_update_feed
+      update = self.get_feed_update(history)
+    File "/Users/doty/src/sociallists/sociallists/feed.py", line 191, in get_feed_update
+      f, self.feed.next_item_id, update_time, self.http_session
+    File "/Users/doty/src/sociallists/sociallists/river.py", line 186, in feed_to_river_update
+      for e,i in zip(feed.entries, count(start_id))
+    File "/Users/doty/src/sociallists/sociallists/river.py", line 186, in <listcomp>
+      for e,i in zip(feed.entries, count(start_id))
+    File "/Users/doty/src/sociallists/sociallists/river.py", line 152, in entry_to_river
+      image = get_entry_thumbnail_image(entry, session)
+    File "/Users/doty/src/sociallists/sociallists/river.py", line 131, in get_entry_thumbnail_image
+      thumbnail_image = media.get_url_image(link, size, session)
+    File "/Users/doty/src/sociallists/sociallists/media.py", line 37, in get_url_image
+      thumbnail_url, http_session, referer=url)
+    File "/Users/doty/src/sociallists/sociallists/media.py", line 74, in _fetch_url
+      result = (response.url, response.headers['Content-Type'], response.content)
+    File "/Users/doty/src/sociallists/venv/lib/python3.5/site-packages/requests/structures.py", line 54, in __getitem__
+      return self._store[key.lower()][1]
+  KeyError: 'content-type'
